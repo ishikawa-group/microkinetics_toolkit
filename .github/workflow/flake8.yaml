@@ -1,0 +1,24 @@
+name: formatting check with flake8
+
+on:
+  pull_request:
+  push:
+    branches: 
+      - main
+      - develop
+
+jobs:
+  command:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: pip install flake8
+      - name: Run checking
+        run: flake8 .
+
