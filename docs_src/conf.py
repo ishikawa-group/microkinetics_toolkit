@@ -36,3 +36,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 html_theme = 'sphinx_rtd_theme'  # テーマを変更
 html_static_path = ['_static']
+
+html_show_copyright = False
+html_show_sphinx = False
+
