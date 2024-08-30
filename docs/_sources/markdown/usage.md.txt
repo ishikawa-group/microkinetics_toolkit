@@ -1,0 +1,19 @@
+# Usage
+To be written $ a^2 + b^2 = c^2 $
+
+$$
+    a^2 + b^2 = c^2
+$$
+
+hello
+
+$$
+    y    & = ax^2 + bx + c \\
+    f(x) & = x^2 + 2xy + y^2
+$$
+
+
+```{math}
+    y    & = ax^2 + bx + c \\
+    f(x) & = x^2 + 2xy + y^2
+```
