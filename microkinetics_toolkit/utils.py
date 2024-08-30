@@ -9,7 +9,6 @@ def read_reactionfile(file):
         rxn (list): reaction type
         prod (list): products
     """
-    import os
     import re
 
     f = open(file, "r")
@@ -45,7 +44,6 @@ def read_reactionfile(file):
 
 
 def return_lines_of_reactionfile(file):
-    import os
     import re
 
     # drop comment and branck lines
@@ -98,10 +96,6 @@ def remove_space(obj):
 
 
 def get_reac_and_prod(reactionfile):
-    import numpy as np
-    import os
-    import sys
-
     # form reactant and product information
     (reac, rxn, prod) = read_reactionfile(reactionfile)
 
@@ -116,9 +110,9 @@ def get_reac_and_prod(reactionfile):
     p_coef = list(range(rxn_num))
 
     for irxn, jrnx in enumerate(rxn):
-        ireac = reac[irxn];
+        ireac = reac[irxn]
         iprod = prod[irxn]
-        ireac_num = len(ireac);
+        ireac_num = len(ireac)
         iprod_num = len(iprod)
         #
         # reactant
@@ -134,7 +128,7 @@ def get_reac_and_prod(reactionfile):
             # coefficient
             #
             if "*" in mol:
-                #r_coef[irxn][imol] = int(mol.split("*")[0])
+                # r_coef[irxn][imol] = int(mol.split("*")[0])
                 r_coef[irxn][imol] = float(mol.split("*")[0])
                 rest = mol.split("*")[1]
             else:
@@ -167,7 +161,7 @@ def get_reac_and_prod(reactionfile):
             # coefficient
             #
             if "*" in mol:
-                #p_coef[irxn][imol] = int(mol.split("*")[0])
+                # p_coef[irxn][imol] = int(mol.split("*")[0])
                 p_coef[irxn][imol] = float(mol.split("*")[0])
                 rest = mol.split("*")[1]
             else:
@@ -194,9 +188,6 @@ def get_number_of_reaction(reactionfile):
     """
     Return number of elementary reactions
     """
-    import numpy as np
-    import os
-    import sys
     (reac, rxn, prod) = read_reactionfile(reactionfile)
     rxn_num = len(rxn)
     return rxn_num
@@ -206,11 +197,8 @@ def get_preexponential(reactionfile):
     #
     # ! not needed for MATLAB use
     #
-    from ase import Atoms, Atom
     from ase.collections import methane
     import numpy as np
-    import os
-    import sys
     #
     # calculate pre-exponential factor
     #
@@ -251,11 +239,7 @@ def get_rateconstant(reactionfile, Afor, Arev, Efor, Erev, T):
     #
     # ! not needed for MATLAB use
     #
-    from ase import Atoms, Atom
-    from ase.collections import methane
     import numpy as np
-    import os
-    import sys
     #
     # calculate rate constant
     #
@@ -269,8 +253,8 @@ def get_rateconstant(reactionfile, Afor, Arev, Efor, Erev, T):
     RT = 8.314 * T / 1000.0  # in kJ/mol
 
     for irxn in range(rxn_num):
-        kfor[irxn] = Afor[irxn] * exp(-Efor[irxn] / RT)
-        krev[irxn] = Arev[irxn] * exp(-Erev[irxn] / RT)
+        kfor[irxn] = Afor[irxn] * np.exp(-Efor[irxn] / RT)
+        krev[irxn] = Arev[irxn] * np.exp(-Erev[irxn] / RT)
 
     return kfor, krev
 
@@ -338,9 +322,8 @@ def get_adsorption_sites(infile):
 
 
 def find_closest_atom(surf, offset=(0, 0)):
-    from ase import Atoms, Atom
+    from ase import Atom
     from ase.build import add_adsorbate
-    from ase.visualize import view
     import numpy as np
 
     dummy = Atom('H', (0, 0, 0))
@@ -359,7 +342,7 @@ def find_closest_atom(surf, offset=(0, 0)):
 
 
 def sort_atoms_by_z(atoms):
-    from ase import Atoms, Atom
+    from ase import Atoms
     import numpy as np
     import collections
     #
@@ -468,7 +451,6 @@ def neb_copy_contcar_to_poscar(nimages):
 
 def make_it_closer_by_exchange(atom1, atom2, thre=0.05):
     # thre: when distance is larger than this value, do switch
-    from ase import Atoms, Atom
     from ase.geometry import distance
 
     natoms = len(atom1)

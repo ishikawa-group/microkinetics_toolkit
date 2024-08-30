@@ -1,15 +1,13 @@
-import sys
 import numpy as np
 import pandas as pd
 import argparse
 import json
 from reaction_tools import get_number_of_reaction
-import math
 
 np.set_printoptions(precision=3)
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--reac_json", default="reaction_energy.json", help="json for reading reaction energy and writing rate")
+parser.add_argument("--reac_json", default="reaction_energy.json", help="json reaction energy (read) and rate (write)")
 
 args = parser.parse_args()
 reac_json = args.reac_json
@@ -22,7 +20,7 @@ kB = 8.617e-5  # eV/K
 reactionfile = "oer.txt"
 rxn_num = get_number_of_reaction(reactionfile)
 
-## OER elementary reactions: note that they match with the reactions in reactionfile.
+# --- OER elementary reactions: note that they match with the reactions in reactionfile.
 # 0) H2O + * -> OH* + H+ + e-
 # 1) OH* -> O* + H+ + e-
 # 2) O* + H2O -> OOH* + H+ + e-
@@ -30,7 +28,7 @@ rxn_num = get_number_of_reaction(reactionfile)
 #  Using CHE, chemical potential of H+ + e- becomes that of 0.5*H2.
 #  O2 Gibbs energy is replaced: O2 + 2H2 <-> 2H2O + 4.92
 #
-species = {"H2" : 0, "H2O": 1, "OHads": 2, "Oads": 3, "OOHads": 4, "O2": 5}
+species = {"H2": 0, "H2O": 1, "OHads": 2, "Oads": 3, "OOHads": 4, "O2": 5}
 E_redox = {"OER": 1.23}
 
 # entropy in eV/K
@@ -46,7 +44,7 @@ zpe[species["H2"]]     = 0.27
 zpe[species["H2O"]]    = 0.56
 zpe[species["OHads"]]  = 0.36
 zpe[species["Oads"]]   = 0.07
-zpe[species["OOHads"]] = 0.40  # temporary 
+zpe[species["OOHads"]] = 0.40  # temporary
 zpe[species["O2"]]     = 0.05*2
 
 # loss in each elementary reaction
@@ -54,7 +52,7 @@ deltaS    = np.zeros(rxn_num)
 deltaS[0] = 0.5*S[species["H2"]] - S[species["H2O"]]
 deltaS[1] = 0.5*S[species["H2"]]
 deltaS[2] = 0.5*S[species["H2"]] - S[species["H2O"]]
-#deltaS[3] = S[species["O2"]] + 0.5*S[species["H2"]]
+# deltaS[3] = S[species["O2"]] + 0.5*S[species["H2"]]
 deltaS[3] = 2.0*S[species["H2O"]] -1.5*S[species["H2"]]
 
 # zero-point energy (ZPE) in eV
@@ -62,7 +60,7 @@ deltaZPE    = np.zeros(rxn_num)
 deltaZPE[0] = zpe[species["OHads"]] + 0.5*zpe[species["H2"]] - zpe[species["H2O"]]
 deltaZPE[1] = zpe[species["Oads"]] + 0.5*zpe[species["H2"]] - zpe[species["OHads"]]
 deltaZPE[2] = zpe[species["OOHads"]] + 0.5*zpe[species["H2"]] - zpe[species["Oads"]] - zpe[species["H2O"]]
-#deltaZPE[3] = zpe[species["O2"]] + 0.5*zpe[species["H2"]] - zpe[species["OOHads"]]
+# deltaZPE[3] = zpe[species["O2"]] + 0.5*zpe[species["H2"]] - zpe[species["OOHads"]]
 deltaZPE[3] = 2.0*zpe[species["H2O"]] - 1.5*zpe[species["H2"]] - zpe[species["OOHads"]]
 
 # shift potential shift, added to the right-hand side
@@ -76,8 +74,7 @@ num_data = len(df_reac)
 
 for id in range(num_data):
     if "score" in df_reac.iloc[id].index:
-    # already calculated
-    	pass
+        pass
 
     if isinstance(df_reac.iloc[id].reaction_energy, list):
         unique_id = df_reac.iloc[id].name
@@ -87,7 +84,7 @@ for id in range(num_data):
         deltaG = deltaH - T*deltaS
         deltaG = deltaG + shift
 
-        eta_oer  = np.max(deltaG[0:4]) - E_redox["OER"]  # overpotential of OER
+        eta_oer = np.max(deltaG[0:4]) - E_redox["OER"]  # overpotential of OER
 
         score = -eta_oer
 
