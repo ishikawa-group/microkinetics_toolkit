@@ -1,21 +1,19 @@
-import os
-import numpy as np
-from ase import Atom, Atoms
-from ase.calculators.emt import EMT
-from ase.db import connect
-from ase.io import read, write
-from ase.visualize import view
-from ase.build import surface, add_adsorbate
-from microkinetics_toolkit.utils import get_number_of_reaction
-from microkinetics_toolkit.utils import get_reac_and_prod
-from microkinetics_toolkit.utils import get_adsorbate_type
-from microkinetics_toolkit.utils import make_surface_from_cif
-
-
-def calc_reaction_energy(reaction_file="oer.txt", cif_file="pdo.cif"):
+def calc_reaction_energy(reaction_file="oer.txt", surface=None):
     """
     Calculate reaction energy for each reaction.
     """
+    import os
+    import numpy as np
+    from ase import Atom, Atoms
+    from ase.calculators.emt import EMT
+    from ase.db import connect
+    from ase.io import read, write
+    from ase.visualize import view
+    from ase.build import add_adsorbate
+    from microkinetics_toolkit.utils import get_number_of_reaction
+    from microkinetics_toolkit.utils import get_reac_and_prod
+    from microkinetics_toolkit.utils import get_adsorbate_type
+
     r_ads, r_site, r_coef, p_ads, p_site, p_coef = get_reac_and_prod(reaction_file)
     rxn_num = get_number_of_reaction(reaction_file)
 
@@ -39,6 +37,8 @@ def calc_reaction_energy(reaction_file="oer.txt", cif_file="pdo.cif"):
         energies = {"reactant": 0.0, "product": 0.0}
 
         for side in ["reactant", "product"]:
+            surface_ = surface.copy()
+
             if side == "reactant":
                 mols, sites, coefs = r_ads[irxn], r_site[irxn], r_coef[irxn]
             elif side == "product":
@@ -48,12 +48,9 @@ def calc_reaction_energy(reaction_file="oer.txt", cif_file="pdo.cif"):
                 quit()
 
             E = 0.0
-
-            surf = make_surface_from_cif(cif_file)
-
             for imol, mol in enumerate(mols):
                 if mol[0] == "surf":
-                    atoms = surf
+                    atoms = surface_
                 else:
                     id_ = database.get(name=mol[0]).id
                     atoms = database.get_atoms(id=id_)
@@ -72,12 +69,13 @@ def calc_reaction_energy(reaction_file="oer.txt", cif_file="pdo.cif"):
                         adsorbate.rotate(*rotation[formula])
 
                     height = 1.8
+                    offset = (0.0, 0.5)
                     position = adsorbate.positions[0][:2]
-                    add_adsorbate(surf, adsorbate, offset=(0, 0), position=position, height=height)
+                    add_adsorbate(surface_, adsorbate, offset=offset, position=position, height=height)
 
-                    atoms = surf.copy()
+                    atoms = surface_.copy()
                     atoms.calc = calc_surf
-                    # view(atoms)
+                    view(atoms)
                 else:
                     print("some error")
                     quit()
@@ -97,6 +95,9 @@ def calc_overpotential_oer_orr(reaction_file, deltaEs, T=298.15):
     """
     Calculate overpotential for OER or ORR.
     """
+    import numpy as np
+    from microkinetics_toolkit.utils import get_number_of_reaction
+
     rxn_num = get_number_of_reaction(reaction_file)
 
     zpe = {"H2": 0.0, "H2O": 0.0, "OHads": 0.0, "Oads": 0.0, "OOHads": 0.0}
@@ -160,8 +161,12 @@ def set_ocp_calculator():
 
 if __name__ == "__main__":
     from ase.build import fcc111
+    from microkinetics_toolkit.utils import make_surface_from_cif
 
-    deltaEs = calc_reaction_energy(reaction_file="oer.txt", cif_file="pdo.cif")
+    cif_file = "pdo.cif"
+    surface = make_surface_from_cif(cif_file)
+
+    deltaEs = calc_reaction_energy(reaction_file="oer.txt", surface=surface)
     print(f"deltaEs = {deltaEs}")
     eta = calc_overpotential_oer_orr(reaction_file="oer.txt", deltaEs=deltaEs)
     print(f"eta = {eta:5.3f} eV")
