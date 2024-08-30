@@ -37,36 +37,36 @@ def run_optimizer(atoms, steps=100, optimize_unitcell=False, keep_cell_shape=Fal
 
     if "vasp" in calculator:
         # VASP
-        calc.int_params["ibrion"]  = 2
-        calc.int_params["nsw"]     = steps
+        calc.int_params["ibrion"] = 2
+        calc.int_params["nsw"] = steps
         calc.input_params["potim"] = potim
-        calc.exp_params["ediffg"]  = ediffg
+        calc.exp_params["ediffg"] = ediffg
 
         if optimize_unitcell:
             if keep_cell_shape:
                 # step1: cell volume
-                calc.int_params["isif"]    = 7
-                calc.int_params["nsw"]     = steps
+                calc.int_params["isif"] = 7
+                calc.int_params["nsw"] = steps
                 calc.input_params["potim"] = potim
-                calc.exp_params["ediffg"]  = ediff * 0.1  # energy based
+                calc.exp_params["ediffg"] = ediff * 0.1  # energy based
                 atoms.set_calculator(calc)
                 atoms.get_potential_energy()
 
                 # step2: ionic
-                calc.int_params["isif"]   = 2
+                calc.int_params["isif"] = 2
                 calc.exp_params["ediffg"] = ediffg
                 atoms.set_calculator(calc)
             else:
                 # ionic + cell
-                calc.int_params["isif"]   = 4
+                calc.int_params["isif"] = 4
                 calc.exp_params["ediffg"] = ediff * 0.1  # energy based
                 atoms.set_calculator(calc)
         else:
             # ionic
-            calc.int_params["isif"]    = 2
-            calc.int_params["nsw"]     = steps
+            calc.int_params["isif"] = 2
+            calc.int_params["nsw"] = steps
             calc.input_params["potim"] = potim
-            calc.exp_params["ediffg"]  = ediffg
+            calc.exp_params["ediffg"] = ediffg
     else:
         # EMT
         opt = BFGS(atoms)
@@ -79,11 +79,11 @@ def run_optimizer(atoms, steps=100, optimize_unitcell=False, keep_cell_shape=Fal
     # reset vasp calculator to single point energy's one
     if "vasp" in calculator:
         if do_single_point:
-            calc.int_params["ibrion"]  = -1
-            calc.int_params["nsw"]     = 0
-            calc.int_params["isif"]    = 2
-            calc.int_params["istart"]  = 1
-            calc.int_params["icharg"]  = 1
+            calc.int_params["ibrion"] = -1
+            calc.int_params["nsw"] = 0
+            calc.int_params["isif"] = 2
+            calc.int_params["istart"] = 1
+            calc.int_params["icharg"] = 1
             calc.input_params["potim"] = 0
             atoms.set_calculator(calc)
 
@@ -134,20 +134,20 @@ def savefig_atoms(atoms, filename):
 parser = argparse.ArgumentParser()
 parser.add_argument("--unique_id", help="unique id for surface system")
 parser.add_argument("--calculator", default="emt", choices=["emt", "EMT", "vasp", "VASP"])
-parser.add_argument("--surf_json",  default="surf.json", help="json for surfaces")
-parser.add_argument("--deltaE_json",  default="reaction_energy.json", help="file to write reaction energy")
+parser.add_argument("--surf_json", default="surf.json", help="json for surfaces")
+parser.add_argument("--deltaE_json", default="reaction_energy.json", help="file to write reaction energy")
 parser.add_argument("--reactionfile", default="nh3.txt", help="reaction string file")
 parser.add_argument("--npar", default=2, type=int, help="npar in VASP INCAR")
 parser.add_argument("--steps", default=5, type=int, help="number of geometry optimization stpes")
 
 args = parser.parse_args()
-unique_id    = args.unique_id
-calculator   = args.calculator.lower()
-surf_json    = args.surf_json
-deltaE_json  = args.deltaE_json
+unique_id = args.unique_id
+calculator = args.calculator.lower()
+surf_json = args.surf_json
+deltaE_json = args.deltaE_json
 reactionfile = args.reactionfile
 
-npar  = args.npar
+npar = args.npar
 steps = args.steps
 
 submitdir = os.getcwd()
@@ -185,8 +185,8 @@ tmpdbfile = os.path.join(submitdir, tmpdbfile)
 tmpdb = connect(tmpdbfile)
 
 # molecule collection from ase
-data_path  = os.path.join(os.environ["HOME"], "dft_gan/data")
-data_json  = "g2plus.json"
+data_path = os.path.join(os.environ["HOME"], "dft_gan/data")
+data_json = "g2plus.json"
 collection = connect(os.path.join(data_path, data_json))
 
 if not os.path.isfile(deltaE_json):
@@ -201,57 +201,55 @@ print("id: ", unique_id)
 db = connect(surf_json)
 
 if "vasp" in calculator:
-    prec    = "normal"
-    encut   = 400
-    #encut   = 450  # two NaNs
-    xc     = "scan"
-    #xc      = "pbe"
+    prec = "normal"
+    encut = 400
+    # encut   = 450  # two NaNs
+    xc = "scan"
+    # xc      = "pbe"
+    # ivdw    = 12  # not good
+    ivdw = 0
 
-    #ivdw    = 12  # not good
-    ivdw    = 0
+    nsw = 0  # overwritten by steps
+    nelm = 40
+    nelmin = 5
+    ibrion = -1
+    potim = 0.2
+    # potim   = 0.1  # not good
 
-    nsw     = 0  # overwritten by steps
-    nelm    = 40
-    nelmin  = 5
-    ibrion  = -1
+    algo = "Fast"
+    # algo    = "VeryFast"  # not good
+    # algo    = "All"       # some calculations fail
+    # algo    = "Normal"
 
-    potim   = 0.2
-    #potim   = 0.1  # not good
+    ismear = 0
+    # ismear  = 1  # not good
 
-    algo    = "Fast"
-    #algo    = "VeryFast"  # not good
-    #algo    = "All"       # some calculations fail
-    #algo    = "Normal"
+    sigma = 0.1
+    ediff = 1.0e-5
+    ediffg = -0.10
 
-    ismear  = 0
-    #ismear  = 1  # not good
-
-    sigma   = 0.1
-    ediff   = 1.0e-5
-    ediffg  = -0.10
-
-    kpts    = [2, 2, 1]
-    kgamma  = True
-    ispin   = 1
-    lasph   = True
+    kpts = [2, 2, 1]
+    kgamma = True
+    ispin = 1
+    lasph = True
     lmaxmix = 4  # 2 (default), 4 (d-metal), and 6 (f-metal)
-    pp      = "potpaw_PBE.54"
-    #nsim    = npar
-    nsim    = 2
-    isym    = -1
-    lreal   = False
-    #lreal   = True  # not good
-    lorbit  = 10
-    lwave   = True if do_single_point else False
-    lcharg  = True if do_single_point else False
- 
-    ldipol  = True
-    idipol  = 3
+    pp = "potpaw_PBE.54"
+    # nsim    = npar
+    nsim = 2
+    isym = -1
+    lreal = False
+    # lreal   = True  # not good
+    lorbit = 10
+    lwave = True if do_single_point else False
+    lcharg = True if do_single_point else False
 
-    calc_mol  = Vasp(prec=prec, encut=encut, xc=xc, ivdw=ivdw, algo=algo, ediff=ediff, ediffg=ediffg,
-                     ibrion=ibrion, potim=potim, nsw=nsw, nelm=nelm, nelmin=nelmin, kpts=[1, 1, 1],
-                     ispin=ispin, pp=pp, npar=npar, nsim=nsim, isym=isym, lreal=lreal,
-                     lwave=lwave, lcharg=lcharg, ismear=0, sigma=sigma, lorbit=lorbit, lasph=lasph)
+    ldipol = True
+    idipol = 3
+
+    calc_mol = Vasp(prec=prec, encut=encut, xc=xc, ivdw=ivdw, algo=algo, ediff=ediff, ediffg=ediffg,
+                    ibrion=ibrion, potim=potim, nsw=nsw, nelm=nelm, nelmin=nelmin, kpts=[1, 1, 1],
+                    ispin=ispin, pp=pp, npar=npar, nsim=nsim, isym=isym, lreal=lreal,
+                    lwave=lwave, lcharg=lcharg, ismear=0, sigma=sigma, lorbit=lorbit, lasph=lasph)
     calc_surf = Vasp(prec=prec, encut=encut, xc=xc, ivdw=ivdw, algo=algo, ediff=ediff, ediffg=ediffg,
                      ibrion=ibrion, potim=potim, nsw=nsw, nelm=nelm, nelmin=nelmin, kpts=kpts, kgamma=kgamma,
                      ispin=ispin, pp=pp, npar=npar, nsim=nsim, isym=isym, lreal=lreal, lmaxmix=lmaxmix,
@@ -259,14 +257,14 @@ if "vasp" in calculator:
                      ldipol=ldipol, idipol=idipol)
 
 elif "emt" in calculator:
-    calc_mol  = EMT()
+    calc_mol = EMT()
     calc_surf = EMT()
     optimize_unitcell = False
 else:
     print("currently VASP or EMT is supported ... quit")
     sys.exit(1)
 
-(r_ads, r_site, r_coef,  p_ads, p_site, p_coef) = get_reac_and_prod(reactionfile)
+(r_ads, r_site, r_coef, p_ads, p_site, p_coef) = get_reac_and_prod(reactionfile)
 rxn_num = get_number_of_reaction(reactionfile)
 
 surf = db.get_atoms(unique_id=unique_id).copy()
@@ -274,7 +272,7 @@ surf = db.get_atoms(unique_id=unique_id).copy()
 try:
     df_reac = pd.read_json(deltaE_json)
     df_reac = df_reac.set_index("unique_id")
-except:
+except ValueError:
     # blanck json file --- going
     pass
 
@@ -298,11 +296,11 @@ for irxn in range(rxn_num):
 
     for side in ["reactant", "product"]:
         if side == "reactant":
-            mols  = r_ads[irxn]
+            mols = r_ads[irxn]
             sites = r_site[irxn]
             coefs = r_coef[irxn]
         elif side == "product":
-            mols  = p_ads[irxn]
+            mols = p_ads[irxn]
             sites = p_site[irxn]
             coefs = p_coef[irxn]
 
@@ -325,7 +323,7 @@ for irxn in range(rxn_num):
             elif mol_type == "surf":
                 # bare surface
                 atoms = surf.copy()
- 
+
             elif mol_type == "adsorbed":
                 # adsorbate calculation
                 id_ = collection.get(name=mol[0]).id
@@ -334,23 +332,23 @@ for irxn in range(rxn_num):
                 height0 = 1.3  # 1.3 - 1.6
                 if site == "atop":
                     offset = (0.50, 0.50)  # for [2, 2] supercell
-                    #offset = (0.33, 0.33)  # for [3, 3] supercell
-                    #offset = (0.40, 0.50)  # for stepped fcc
-                    #offset = (0.37, 0.44)  # for stepped hcp
+                    # offset = (0.33, 0.33)  # for [3, 3] supercell
+                    # offset = (0.40, 0.50)  # for stepped fcc
+                    # offset = (0.37, 0.44)  # for stepped hcp
                     height = height0
                 elif site == "br" or site == "bridge":
                     offset = (0.50, 0.50)  # for [2, 2] supercell
-                    #offset = (0.33, 0.33)  # for [3, 3] supercell
-                    #offset = (0.34, 0.32)  # for stepped fcc
-                    #offset = (0.50, 0.50)  # for stepped hcp
+                    # offset = (0.33, 0.33)  # for [3, 3] supercell
+                    # offset = (0.34, 0.32)  # for stepped fcc
+                    # offset = (0.50, 0.50)  # for stepped hcp
                     height = height0 + 0.2
                 elif site == "fcc":
-                    #offset = (0.33, 0.33)  # for [2, 2] supercell
-                    #offset = (0.20, 0.20)  # for [3, 3] supercell
-                    #offset = (0.25, 0.25)  # for PtO2
+                    # offset = (0.33, 0.33)  # for [2, 2] supercell
+                    # offset = (0.20, 0.20)  # for [3, 3] supercell
+                    # offset = (0.25, 0.25)  # for PtO2
                     offset = (0.50, 0.50)  # for RuO2
-                    #offset = (0.22, 0.32)  # for stepped fcc
-                    #offset = (0.50, 0.57)  # for stepped hcp...x and y cannot be rotated
+                    # offset = (0.22, 0.32)  # for stepped fcc
+                    # offset = (0.50, 0.57)  # for stepped hcp...x and y cannot be rotated
                     height = height0
                 else:
                     offset = (0.50, 0.50)
@@ -358,9 +356,9 @@ for irxn in range(rxn_num):
 
                 # get surf part from tmpdb of ads + surf case, as it should be done beforehand
                 surf_formula = surf.get_chemical_formula()
-                name  = surf_formula + "gas" + unique_id
-                past  = tmpdb.get(name=name)
-                surf  = tmpdb.get_atoms(id=past.id)
+                name = surf_formula + "gas" + unique_id
+                past = tmpdb.get(name=name)
+                surf = tmpdb.get_atoms(id=past.id)
                 atoms = surf.copy()
                 add_adsorbate(atoms, adsorbate, offset=offset, height=height)
             else:
@@ -373,7 +371,7 @@ for irxn in range(rxn_num):
             formula = atoms.get_chemical_formula()
             try:
                 past = tmpdb.get(name=formula + site + unique_id)
-            except:
+            except ValueError:
                 first_time = True
             else:
                 if site == past.data.site:
@@ -389,9 +387,9 @@ for irxn in range(rxn_num):
                 # setup calculator and do calculation
                 #
                 if ispin == 2:
-                    atoms.set_initial_magnetic_moments(magmoms=[0.01]*len(atoms))
+                    atoms.set_initial_magnetic_moments(magmoms=[0.01] * len(atoms))
                 else:
-                    atoms.set_initial_magnetic_moments(magmoms=[0]*len(atoms))
+                    atoms.set_initial_magnetic_moments(magmoms=[0] * len(atoms))
 
                 if mol_type == "gaseous":
                     set_unitcell_gasphase(atoms)
@@ -401,7 +399,7 @@ for irxn in range(rxn_num):
                     atoms = fix_lower_surface(atoms)
                     calc = calc_surf
                 elif mol_type == "adsorbed":
-                    calc  = calc_surf
+                    calc = calc_surf
                     optimize_unitcell = False  # do not do cell optimization for adsorbed case
 
                 dir = workdir + "/" + unique_id + "_" + formula
@@ -429,7 +427,7 @@ for irxn in range(rxn_num):
                     os.system("cp {0:s}/vasprun.xml {1:s}.xml".format(dir, file_prefix))
                     os.system("cp {0:s}/vasprun.xml {1:s}.xml".format(dir, file_prefix))
 
-                #if savefig and mol_type == "adsorbed":
+                # if savefig and mol_type == "adsorbed":
                 if savefig:
                     savefig_atoms(atoms, filename=file_prefix + ".png")
 
@@ -440,12 +438,12 @@ for irxn in range(rxn_num):
                 past = tmpdb.get(id=past.id)
                 en = past.data.energy
 
-            E += coefs[imol]*en
+            E += coefs[imol] * en
 
             #
             # recording to database
             #
-            if(first_time):
+            if first_time:
                 id = tmpdb.reserve(name=formula + site + unique_id)
                 if id is None:  # somebody is writing to db
                     continue

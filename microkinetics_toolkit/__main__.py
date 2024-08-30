@@ -2,12 +2,9 @@ def calc_reaction_energy(reaction_file="oer.txt", surface=None):
     """
     Calculate reaction energy for each reaction.
     """
-    import os
     import numpy as np
-    from ase import Atom, Atoms
     from ase.calculators.emt import EMT
     from ase.db import connect
-    from ase.io import read, write
     from ase.visualize import view
     from ase.build import add_adsorbate
     from microkinetics_toolkit.utils import get_number_of_reaction
@@ -142,14 +139,14 @@ def set_vasp_calculator():
     """
     Set up a calculator using VASP.
     """
-    return calc
+    # return calc
+    return None
 
 
 def set_ocp_calculator():
     """
     Set up a calculator using Neural Network Potential with OCP.
     """
-    from fairchem.core.models.model_registry import available_pretrained_models
     from fairchem.core.models.model_registry import model_name_to_local_file
     from fairchem.core.common.relaxation.ase_utils import OCPCalculator
 
@@ -160,7 +157,6 @@ def set_ocp_calculator():
 
 
 if __name__ == "__main__":
-    from ase.build import fcc111
     from microkinetics_toolkit.utils import make_surface_from_cif
 
     cif_file = "pdo.cif"
