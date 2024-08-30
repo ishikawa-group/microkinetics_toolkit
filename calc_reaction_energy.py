@@ -1,0 +1,471 @@
+from ase import Atoms
+from ase.build import add_adsorbate
+from ase.visualize import view
+from ase.calculators.vasp import Vasp
+from ase.calculators.emt import EMT
+from ase.db import connect
+from ase.optimize import BFGS
+from tools import fix_lower_surface
+from reaction_tools import get_reac_and_prod, get_number_of_reaction
+import sys
+import json
+import datetime
+import os
+import pandas as pd
+import numpy as np
+import argparse
+import shutil
+import socket
+
+
+def set_unitcell_gasphase(atoms, vacuum=10.0):
+    cell = np.array([1, 1, 1]) * vacuum
+    atoms.set_cell(cell)
+
+    if "vasp" in calculator:
+        atoms.set_pbc(True)
+
+
+def set_calculator_with_directory(atoms, calc, directory="."):
+    if "vasp" in calculator:
+        calc.directory = directory
+    atoms.set_calculator(calc)
+
+
+def run_optimizer(atoms, steps=100, optimize_unitcell=False, keep_cell_shape=False):
+    calc = atoms.get_calculator()
+
+    if "vasp" in calculator:
+        # VASP
+        calc.int_params["ibrion"] = 2
+        calc.int_params["nsw"] = steps
+        calc.input_params["potim"] = potim
+        calc.exp_params["ediffg"] = ediffg
+
+        if optimize_unitcell:
+            if keep_cell_shape:
+                # step1: cell volume
+                calc.int_params["isif"] = 7
+                calc.int_params["nsw"] = steps
+                calc.input_params["potim"] = potim
+                calc.exp_params["ediffg"] = ediff * 0.1  # energy based
+                atoms.set_calculator(calc)
+                atoms.get_potential_energy()
+
+                # step2: ionic
+                calc.int_params["isif"] = 2
+                calc.exp_params["ediffg"] = ediffg
+                atoms.set_calculator(calc)
+            else:
+                # ionic + cell
+                calc.int_params["isif"] = 4
+                calc.exp_params["ediffg"] = ediff * 0.1  # energy based
+                atoms.set_calculator(calc)
+        else:
+            # ionic
+            calc.int_params["isif"] = 2
+            calc.int_params["nsw"] = steps
+            calc.input_params["potim"] = potim
+            calc.exp_params["ediffg"] = ediffg
+    else:
+        # EMT
+        opt = BFGS(atoms)
+        opt.run(fmax=0.1, steps=steps)
+        atoms.get_potential_energy()
+
+    # do calculation
+    en = atoms.get_potential_energy()
+
+    # reset vasp calculator to single point energy's one
+    if "vasp" in calculator:
+        if do_single_point:
+            calc.int_params["ibrion"] = -1
+            calc.int_params["nsw"] = 0
+            calc.int_params["isif"] = 2
+            calc.int_params["istart"] = 1
+            calc.int_params["icharg"] = 1
+            calc.input_params["potim"] = 0
+            atoms.set_calculator(calc)
+
+    return en, atoms
+
+
+def get_mol_type(mol, site):
+    if site == 'gas':
+        if 'surf' in mol:
+            mol_type = 'surf'
+        else:
+            mol_type = 'gaseous'
+    else:
+        mol_type = 'adsorbed'
+
+    return mol_type
+
+
+def add_to_json(jsonfile, data):
+    # add data to database
+
+    with open(jsonfile, "r") as f:
+        # remove "doing" record as calculation is done
+        datum = json.load(f)
+        for i in range(len(datum)):
+            if (datum[i]["unique_id"] == unique_id) and (datum[i]["status"] == "doing"):
+                datum.pop(i)
+                break
+
+        datum.append(data)
+
+    with open(jsonfile, "w") as f:
+        json.dump(datum, f, indent=4)
+
+
+def savefig_atoms(atoms, filename):
+    import matplotlib.pyplot as plt
+    from ase.visualize.plot import plot_atoms
+    fig, ax = plt.subplots()
+    # plot_atoms(atoms, ax, rotation='280x,0y,0z')
+    plot_atoms(atoms, ax, rotation='0x,0y,0z')
+    ax.set_axis_off()
+    fig.savefig(filename)
+
+
+# --- main starts here
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--unique_id", help="unique id for surface system")
+parser.add_argument("--calculator", default="emt", choices=["emt", "EMT", "vasp", "VASP"])
+parser.add_argument("--surf_json", default="surf.json", help="json for surfaces")
+parser.add_argument("--deltaE_json", default="reaction_energy.json", help="file to write reaction energy")
+parser.add_argument("--reactionfile", default="nh3.txt", help="reaction string file")
+parser.add_argument("--npar", default=2, type=int, help="npar in VASP INCAR")
+parser.add_argument("--steps", default=5, type=int, help="number of geometry optimization stpes")
+
+args = parser.parse_args()
+unique_id = args.unique_id
+calculator = args.calculator.lower()
+surf_json = args.surf_json
+deltaE_json = args.deltaE_json
+reactionfile = args.reactionfile
+
+npar = args.npar
+steps = args.steps
+
+submitdir = os.getcwd()
+surf_json = os.path.join(submitdir, surf_json)
+
+# whether to clean up working directory for vasp
+clean = False
+
+# save figures for structure
+savefig = False
+
+# whether to do sigle point energy calculation after geometry optimization
+do_single_point = False
+
+# whether to keep cell shape (i.e. ISIF=4 or 7)
+keep_cell_shape = True  # False...gives erronous reaction energy
+
+# whether to check coordinate by view
+check_surf_only = False
+check_all = False
+
+# whether to optimize unit cell
+optimize_unitcell = True
+
+# workdir to store vasp data
+# workdir = "/work/a_ishi/"
+# workdir = "/home/a_ishi/dft_gan/work/"
+workdir = "work"
+
+# Temprary database to avoid overlapping calculations.
+# For parallel calculation, database should be made beforehand,
+# as some process might access to db.
+tmpdbfile = "tmp.db"
+tmpdbfile = os.path.join(submitdir, tmpdbfile)
+tmpdb = connect(tmpdbfile)
+
+# molecule collection from ase
+data_path = os.path.join(os.environ["HOME"], "dft_gan/data")
+data_json = "g2plus.json"
+collection = connect(os.path.join(data_path, data_json))
+
+if not os.path.isfile(deltaE_json):
+    # json file does not exist -- make
+    with open(deltaE_json, "w") as f:
+        f.write(json.dumps([], indent=4))
+
+print(datetime.datetime.now().strftime("%Y-%m-%d_%H:%M"))
+print("hostname: ", socket.gethostname())
+print("id: ", unique_id)
+
+db = connect(surf_json)
+
+if "vasp" in calculator:
+    prec = "normal"
+    encut = 400
+    # encut   = 450  # two NaNs
+    xc = "scan"
+    # xc      = "pbe"
+    # ivdw    = 12  # not good
+    ivdw = 0
+
+    nsw = 0  # overwritten by steps
+    nelm = 40
+    nelmin = 5
+    ibrion = -1
+    potim = 0.2
+    # potim   = 0.1  # not good
+
+    algo = "Fast"
+    # algo    = "VeryFast"  # not good
+    # algo    = "All"       # some calculations fail
+    # algo    = "Normal"
+
+    ismear = 0
+    # ismear  = 1  # not good
+
+    sigma = 0.1
+    ediff = 1.0e-5
+    ediffg = -0.10
+
+    kpts = [2, 2, 1]
+    kgamma = True
+    ispin = 1
+    lasph = True
+    lmaxmix = 4  # 2 (default), 4 (d-metal), and 6 (f-metal)
+    pp = "potpaw_PBE.54"
+    # nsim    = npar
+    nsim = 2
+    isym = -1
+    lreal = False
+    # lreal   = True  # not good
+    lorbit = 10
+    lwave = True if do_single_point else False
+    lcharg = True if do_single_point else False
+
+    ldipol = True
+    idipol = 3
+
+    calc_mol = Vasp(prec=prec, encut=encut, xc=xc, ivdw=ivdw, algo=algo, ediff=ediff, ediffg=ediffg,
+                    ibrion=ibrion, potim=potim, nsw=nsw, nelm=nelm, nelmin=nelmin, kpts=[1, 1, 1],
+                    ispin=ispin, pp=pp, npar=npar, nsim=nsim, isym=isym, lreal=lreal,
+                    lwave=lwave, lcharg=lcharg, ismear=0, sigma=sigma, lorbit=lorbit, lasph=lasph)
+    calc_surf = Vasp(prec=prec, encut=encut, xc=xc, ivdw=ivdw, algo=algo, ediff=ediff, ediffg=ediffg,
+                     ibrion=ibrion, potim=potim, nsw=nsw, nelm=nelm, nelmin=nelmin, kpts=kpts, kgamma=kgamma,
+                     ispin=ispin, pp=pp, npar=npar, nsim=nsim, isym=isym, lreal=lreal, lmaxmix=lmaxmix,
+                     lwave=lwave, lcharg=lcharg, ismear=ismear, sigma=sigma, lorbit=lorbit, lasph=lasph,
+                     ldipol=ldipol, idipol=idipol)
+
+elif "emt" in calculator:
+    calc_mol = EMT()
+    calc_surf = EMT()
+    optimize_unitcell = False
+else:
+    print("currently VASP or EMT is supported ... quit")
+    sys.exit(1)
+
+(r_ads, r_site, r_coef, p_ads, p_site, p_coef) = get_reac_and_prod(reactionfile)
+rxn_num = get_number_of_reaction(reactionfile)
+
+surf = db.get_atoms(unique_id=unique_id).copy()
+
+try:
+    df_reac = pd.read_json(deltaE_json)
+    df_reac = df_reac.set_index("unique_id")
+except ValueError:
+    # blanck json file --- going
+    pass
+
+if unique_id in df_reac.index:
+    if "reaction_energy" in df_reac.loc[unique_id]:
+        deltaE = df_reac.loc[unique_id].reaction_energy
+        print("already done")
+        sys.exit(0)
+    elif df_reac.loc[unique_id]["status"] == "doing":
+        print("somebody is doing")
+        sys.exit(0)
+
+deltaE = np.array([])
+
+print(" --- calculating %s ---" % surf.get_chemical_formula())
+
+for irxn in range(rxn_num):
+    print("irxn = %d" % irxn)
+
+    energies = {"reactant": 0.0, "product": 0.0}
+
+    for side in ["reactant", "product"]:
+        if side == "reactant":
+            mols = r_ads[irxn]
+            sites = r_site[irxn]
+            coefs = r_coef[irxn]
+        elif side == "product":
+            mols = p_ads[irxn]
+            sites = p_site[irxn]
+            coefs = p_coef[irxn]
+
+        E = 0.0
+        for imol, mol in enumerate(mols):
+            if mol[0] == "surf":
+                molecule = mol[0]
+            else:
+                id_ = collection.get(name=mol[0]).id
+                molecule = collection.get_atoms(id=id_)
+
+            site = sites[imol][0]
+            mol_type = get_mol_type(molecule, site)
+
+            # determine system type...1) gaseous 2) bare surface 3) surface + adsorbate
+            if mol_type == "gaseous":
+                # gas-phase species
+                atoms = Atoms(molecule)
+
+            elif mol_type == "surf":
+                # bare surface
+                atoms = surf.copy()
+
+            elif mol_type == "adsorbed":
+                # adsorbate calculation
+                id_ = collection.get(name=mol[0]).id
+                adsorbate = collection.get_atoms(id=id_)
+                adsorbate.rotate(180, "y")
+                height0 = 1.3  # 1.3 - 1.6
+                if site == "atop":
+                    offset = (0.50, 0.50)  # for [2, 2] supercell
+                    # offset = (0.33, 0.33)  # for [3, 3] supercell
+                    # offset = (0.40, 0.50)  # for stepped fcc
+                    # offset = (0.37, 0.44)  # for stepped hcp
+                    height = height0
+                elif site == "br" or site == "bridge":
+                    offset = (0.50, 0.50)  # for [2, 2] supercell
+                    # offset = (0.33, 0.33)  # for [3, 3] supercell
+                    # offset = (0.34, 0.32)  # for stepped fcc
+                    # offset = (0.50, 0.50)  # for stepped hcp
+                    height = height0 + 0.2
+                elif site == "fcc":
+                    # offset = (0.33, 0.33)  # for [2, 2] supercell
+                    # offset = (0.20, 0.20)  # for [3, 3] supercell
+                    # offset = (0.25, 0.25)  # for PtO2
+                    offset = (0.50, 0.50)  # for RuO2
+                    # offset = (0.22, 0.32)  # for stepped fcc
+                    # offset = (0.50, 0.57)  # for stepped hcp...x and y cannot be rotated
+                    height = height0
+                else:
+                    offset = (0.50, 0.50)
+                    height = height0
+
+                # get surf part from tmpdb of ads + surf case, as it should be done beforehand
+                surf_formula = surf.get_chemical_formula()
+                name = surf_formula + "gas" + unique_id
+                past = tmpdb.get(name=name)
+                surf = tmpdb.get_atoms(id=past.id)
+                atoms = surf.copy()
+                add_adsorbate(atoms, adsorbate, offset=offset, height=height)
+            else:
+                print("something wrong in determining mol_type")
+                sys.exit(1)
+
+            #
+            # Identification done. Look for temporary database for identical system.
+            #
+            formula = atoms.get_chemical_formula()
+            try:
+                past = tmpdb.get(name=formula + site + unique_id)
+            except ValueError:
+                first_time = True
+            else:
+                if site == past.data.site:
+                    if len(mol) == 1:
+                        # found in tmpdb
+                        atoms = tmpdb.get_atoms(id=past.id)
+                        first_time = False
+
+            first_or_not = "first time" if first_time else "already calculated"
+            print("now calculating {0:>18s} ... {1:s}".format(formula, first_or_not))
+            if first_time:
+                #
+                # setup calculator and do calculation
+                #
+                if ispin == 2:
+                    atoms.set_initial_magnetic_moments(magmoms=[0.01] * len(atoms))
+                else:
+                    atoms.set_initial_magnetic_moments(magmoms=[0] * len(atoms))
+
+                if mol_type == "gaseous":
+                    set_unitcell_gasphase(atoms)
+                    atoms.center()
+                    calc = calc_mol
+                elif mol_type == "surf":
+                    atoms = fix_lower_surface(atoms)
+                    calc = calc_surf
+                elif mol_type == "adsorbed":
+                    calc = calc_surf
+                    optimize_unitcell = False  # do not do cell optimization for adsorbed case
+
+                dir = workdir + "/" + unique_id + "_" + formula
+                set_calculator_with_directory(atoms, calc, directory=dir)
+
+                if check_all:
+                    view(atoms)
+
+                if do_single_point:
+                    # geometry optimization + single point energy calculation
+                    sys.stdout.flush()
+                    en, atoms = run_optimizer(atoms, steps=steps, optimize_unitcell=optimize_unitcell)
+                    sys.stdout.flush()
+                    atoms.get_potential_energy()  # single point
+                else:
+                    # geometry optimization only
+                    sys.stdout.flush()
+                    en, atoms = run_optimizer(atoms, steps=steps, optimize_unitcell=optimize_unitcell,
+                                              keep_cell_shape=keep_cell_shape)
+
+                file_prefix = os.path.join(submitdir, "{0:s}_{1:02d}_{2:02d}".format(formula, irxn, imol))
+
+                # keep vasprun.xml
+                if "vasp" in calculator:
+                    os.system("cp {0:s}/vasprun.xml {1:s}.xml".format(dir, file_prefix))
+                    os.system("cp {0:s}/vasprun.xml {1:s}.xml".format(dir, file_prefix))
+
+                # if savefig and mol_type == "adsorbed":
+                if savefig:
+                    savefig_atoms(atoms, filename=file_prefix + ".png")
+
+                if clean and "vasp" in calculator:
+                    shutil.rmtree(dir)
+
+            else:
+                past = tmpdb.get(id=past.id)
+                en = past.data.energy
+
+            E += coefs[imol] * en
+
+            #
+            # recording to database
+            #
+            if first_time:
+                id = tmpdb.reserve(name=formula + site + unique_id)
+                if id is None:  # somebody is writing to db
+                    continue
+                else:
+                    name = formula + site + unique_id
+                    tmpdb.write(atoms, name=name, id=id, data={"energy": en, "site": site})
+
+        energies[side] = E
+
+    dE = energies["product"] - energies["reactant"]
+    deltaE = np.append(deltaE, dE)
+    print("reaction energy = %8.4f" % dE)
+
+    if abs(dE) > 100.0:
+        print("errorous reaction energy ... quit")
+        sys.exit(1)
+    #
+    # done
+    #
+
+if check_surf_only:
+    view(surf)
+
+data = {"unique_id": unique_id, "reaction_energy": list(deltaE)}
+add_to_json(deltaE_json, data)
