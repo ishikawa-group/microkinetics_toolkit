@@ -1,7 +1,7 @@
-import numpy as np
-import pandas as pd
 import argparse
 import json
+import numpy as np
+import pandas as pd
 from reaction_tools import get_number_of_reaction
 
 np.set_printoptions(precision=3)
