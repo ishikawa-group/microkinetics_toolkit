@@ -1,15 +1,15 @@
-def calc_reaction_energy(reaction_file="oer.txt", surface=None):
+def calc_reaction_energy(reaction_file="oer.txt", surface=None, verbose=False):
     """
     Calculate reaction energy for each reaction.
     """
     import numpy as np
+    from ase.build import add_adsorbate
     from ase.calculators.emt import EMT
     from ase.db import connect
     from ase.visualize import view
-    from ase.build import add_adsorbate
+    from microkinetics_toolkit.utils import get_adsorbate_type
     from microkinetics_toolkit.utils import get_number_of_reaction
     from microkinetics_toolkit.utils import get_reac_and_prod
-    from microkinetics_toolkit.utils import get_adsorbate_type
 
     r_ads, r_site, r_coef, p_ads, p_site, p_coef = get_reac_and_prod(reaction_file)
     rxn_num = get_number_of_reaction(reaction_file)
@@ -88,7 +88,7 @@ def calc_reaction_energy(reaction_file="oer.txt", surface=None):
     return deltaEs
 
 
-def calc_overpotential_oer_orr(reaction_file, deltaEs, T=298.15):
+def calc_overpotential_oer_orr(reaction_file, deltaEs, T=298.15, reaction_type="oer", verbose=False):
     """
     Calculate overpotential for OER or ORR.
     """
@@ -101,7 +101,7 @@ def calc_overpotential_oer_orr(reaction_file, deltaEs, T=298.15):
     S = {"H2": 0.0, "H2O": 0.0, "O2": 0.0}
 
     # ZPE in eV
-    zpe["H2"]  = 0.27
+    zpe["H2"] = 0.27
     zpe["H2O"] = 0.56
     zpe["OHads"] = 0.36
     zpe["Oads"] = 0.07
@@ -115,24 +115,50 @@ def calc_overpotential_oer_orr(reaction_file, deltaEs, T=298.15):
 
     # loss in entropy in each reaction
     deltaSs = np.zeros(rxn_num)
-    deltaSs[0] = 0.5*S["H2"] - S["H2O"]
-    deltaSs[1] = 0.5*S["H2"]
-    deltaSs[2] = 0.5*S["H2"] - S["H2O"]
-    deltaSs[3] = 2.0*S["H2O"] - 1.5*S["H2"]
-
     deltaZPEs = np.zeros(rxn_num)
-    deltaZPEs[0] = zpe["OHads"] + 0.5*zpe["H2"] - zpe["H2O"]
-    deltaZPEs[1] = zpe["Oads"] + 0.5*zpe["H2"] - zpe["OHads"]
-    deltaZPEs[2] = zpe["OOHads"] + 0.5*zpe["H2"] - zpe["Oads"] - zpe["H2O"]
-    deltaZPEs[3] = 2.0*zpe["H2O"] - 1.5*zpe["H2"] - zpe["OOHads"]
+
+    reaction_type = reaction_type.lower()
+    if reaction_type == "oer":
+        deltaSs[0] = 0.5*S["H2"] - S["H2O"]
+        deltaSs[1] = 0.5*S["H2"]
+        deltaSs[2] = 0.5*S["H2"] - S["H2O"]
+        deltaSs[3] = 2.0*S["H2O"] - 1.5*S["H2"]
+
+        deltaZPEs[0] = zpe["OHads"] + 0.5*zpe["H2"] - zpe["H2O"]
+        deltaZPEs[1] = zpe["Oads"] + 0.5*zpe["H2"] - zpe["OHads"]
+        deltaZPEs[2] = zpe["OOHads"] + 0.5*zpe["H2"] - zpe["Oads"] - zpe["H2O"]
+        deltaZPEs[3] = 2.0*zpe["H2O"] - 1.5*zpe["H2"] - zpe["OOHads"]
+
+    elif reaction_type == "orr":
+        deltaSs[0] = - S["O2"] - S["H2"]
+        deltaSs[1] = S["H2O"] - 0.5*S["H2"]
+        deltaSs[2] = - 0.5*S["H2"]
+        deltaSs[3] = S["H2O"] - 0.5*S["H2"]
+
+        deltaZPEs[0] = zpe["OOHads"] - 0.5*zpe["H2"] - zpe["O2"]
+        deltaZPEs[1] = zpe["Oads"] + zpe["H2O"] - 0.5*zpe["H2"] - zpe["OOHads"]
+        deltaZPEs[2] = zpe["OHads"] - 0.5*zpe["H2"] - zpe["Oads"]
+        deltaZPEs[3] = zpe["H2O"] - 0.5*zpe["H2"] - zpe["OHads"]
+
+    else:
+        print("some error")
+        quit()
 
     deltaEs = np.array(deltaEs)
     deltaHs = deltaEs + deltaZPEs
     deltaGs = deltaHs - T*deltaSs
 
-    eta_oer = np.max(deltaGs) - 1.23
+    if verbose:
+        print(f"max of deltaGs = {np.max(deltaGs):5.3f} eV")
+    if reaction_type == "oer":
+        eta = np.max(deltaGs) - 1.23
+    elif reaction_type == "orr":
+        eta = 1.23 - np.max(deltaGs)
+    else:
+        print("some error")
+        quit()
 
-    return eta_oer
+    return eta
 
 
 def set_vasp_calculator():
@@ -147,8 +173,8 @@ def set_ocp_calculator():
     """
     Set up a calculator using Neural Network Potential with OCP.
     """
-    from fairchem.core.models.model_registry import model_name_to_local_file
     from fairchem.core.common.relaxation.ase_utils import OCPCalculator
+    from fairchem.core.models.model_registry import model_name_to_local_file
 
     checkpoint_path = model_name_to_local_file("GemNet-dT-S2EFS-OC22", local_cache="./downloaded_checkpoints/")
     calc = OCPCalculator(checkpoint_path=checkpoint_path)
@@ -158,11 +184,21 @@ def set_ocp_calculator():
 
 if __name__ == "__main__":
     from microkinetics_toolkit.utils import make_surface_from_cif
+    from microkinetics_toolkit.utils import remove_layers
+    from microkinetics_toolkit.utils import replace_element
 
-    cif_file = "pdo.cif"
-    surface = make_surface_from_cif(cif_file)
+    cif_file = "LaMnO3.cif"
+    surface = make_surface_from_cif(cif_file, indices=(0, 0, 1))
 
-    deltaEs = calc_reaction_energy(reaction_file="oer.txt", surface=surface)
+    # for EMT
+    surface = replace_element(surface, from_element="La", to_element="Al")
+    surface = replace_element(surface, from_element="Mn", to_element="Pt")
+
+    surface = remove_layers(surface, element="O", n_layers=2)
+    surface = remove_layers(surface, element="Al", n_layers=1)
+
+    reaction_file = "orr2.txt"
+    deltaEs = calc_reaction_energy(reaction_file=reaction_file, surface=surface)
     print(f"deltaEs = {deltaEs}")
-    eta = calc_overpotential_oer_orr(reaction_file="oer.txt", deltaEs=deltaEs)
+    eta = calc_overpotential_oer_orr(reaction_file=reaction_file, deltaEs=deltaEs, reaction_type="orr", verbose=True)
     print(f"eta = {eta:5.3f} eV")
