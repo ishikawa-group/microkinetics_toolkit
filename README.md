@@ -1,2 +1,2 @@
 # microkinetics_toolkit
-Python library for ab-initio-based microkinetics
+* Python library for ab-initio-based microkinetics
