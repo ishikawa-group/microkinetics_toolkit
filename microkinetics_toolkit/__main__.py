@@ -186,9 +186,11 @@ if __name__ == "__main__":
     from microkinetics_toolkit.utils import make_surface_from_cif
     from microkinetics_toolkit.utils import remove_layers
     from microkinetics_toolkit.utils import replace_element
+    from microkinetics_toolkit.utils import fix_lower_surface
+    from ase.visualize import view
 
     cif_file = "LaMnO3.cif"
-    surface = make_surface_from_cif(cif_file, indices=(0, 0, 1))
+    surface = make_surface_from_cif(cif_file, indices=(0, 0, 1), vacuum=10.0)
 
     # for EMT
     surface = replace_element(surface, from_element="La", to_element="Al")
@@ -196,6 +198,7 @@ if __name__ == "__main__":
 
     surface = remove_layers(surface, element="O", n_layers=2)
     surface = remove_layers(surface, element="Al", n_layers=1)
+    surface = fix_lower_surface(surface)
 
     reaction_file = "orr2.txt"
     deltaEs = calc_reaction_energy(reaction_file=reaction_file, surface=surface)
