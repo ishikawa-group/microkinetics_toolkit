@@ -536,7 +536,7 @@ def get_adsorbate_type(adsorbate, site):
     return ads_type
 
 
-def make_surface_from_cif(cif_file, indices=(1, 0, 0)):
+def make_surface_from_cif(cif_file, indices=(1, 0, 0), vacuum=10.0):
     """
     Make a surface from a CIF file.
     """
@@ -546,7 +546,8 @@ def make_surface_from_cif(cif_file, indices=(1, 0, 0)):
     repeat = [1, 1, 1]
     bulk = read(cif_file)
     bulk = bulk*repeat
-    surf = surface(bulk, indices=indices, layers=2, vacuum=10.0)
+    surf = surface(bulk, indices=indices, layers=2, vacuum=vacuum)
+    surf.translate([0, 0, -vacuum+0.1])
     return surf
 
 
@@ -792,16 +793,19 @@ def remove_layers(atoms=None, element=None, n_layers=1):
     return newatoms
 
 
-def fix_lower_surface(atoms):
+def fix_lower_surface(atoms, adjust_layer=None):
+    """
+    Fix lower surface atoms. By default, lower half (controled by tag) is fixed.
+
+    Args:
+        atoms (Atoms): Atoms object
+        adjust_layer (list): List of element-wise layers to adjust fixing. Positive means more layers are fixed.
+    """
     from ase.constraints import FixAtoms
 
     newatoms = atoms.copy()
-
-    # sort
-    newatoms = sort_atoms_by(newatoms, xyz="z")
-
-    # set tags
-    newatoms = set_tags_by_z(newatoms)
+    newatoms = sort_atoms_by(newatoms, xyz="z")  # sort
+    newatoms = set_tags_by_z(newatoms)  # set tags
 
     # prepare symbol dict
     symbols_ = list(set(atoms.get_chemical_symbols()))
@@ -812,33 +816,38 @@ def fix_lower_surface(atoms):
 
     # Determine fixlayer, which is a list of elements. Half of nlayers.
     nlayers = get_number_of_layers(newatoms)
-    nlayers = nlayers[0]
+
     # check
-    div = [i // 2 for i in range(nlayers)]
-    mod = [i % 2 for i in range(nlayers)]
+    div = [i // 2 for i in nlayers]
+    mod = [i % 2 for i in nlayers]
 
-    fixlayers = [i+j for (i, j) in zip(div, mod)]
+    fixlayers = [i + j for (i, j) in zip(div, mod)]
 
-    # list of fixed atoms
-    fixlist = []
-    tags = newatoms.get_tags()
-    minind = np.argmin(tags)
-    maxind = np.argmax(tags)
-    lowest_z  = newatoms[minind].position[2]
-    highest_z = newatoms[maxind].position[2]
-    z_thre = (highest_z - lowest_z) / 2
+    if adjust_layer is not None:
+        fixlayers = [sum(x) for x in zip(fixlayers, adjust_layer)]
+
+    fixlist = []  # list of fixed atoms
+
+    # tags = newatoms.get_tags()
+    # minind = np.argmin(tags)
+    # maxind = np.argmax(tags)
+
+    # lowest_z  = newatoms[minind].position[2]
+    # highest_z = newatoms[maxind].position[2]
+    # z_thre = (highest_z - lowest_z) / 2 + lowest_z
 
     for iatom in newatoms:
         ind = symbols[iatom.symbol]
-        z_pos = iatom.position[2]
-        if iatom.tag < fixlayers[ind] and z_pos < z_thre:
+        # z_pos = iatom.position[2]
+
+        # if iatom.tag < fixlayers[ind] and z_pos < z_thre:
+        if iatom.tag < fixlayers[ind]:
             fixlist.append(iatom.index)
         else:
             pass
 
-    c = FixAtoms(indices=fixlist)
-
-    newatoms.set_constraint(c)
+    constraint = FixAtoms(indices=fixlist)
+    newatoms.constraints = constraint
 
     return newatoms
 
