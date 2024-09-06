@@ -1,11 +1,10 @@
-def calc_reaction_energy(reaction_file="oer.txt", surface=None, verbose=False):
+def calc_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt", verbose=False):
     """
     Calculate reaction energy for each reaction.
     """
     import numpy as np
     from ase.build import add_adsorbate
-    # from ase.calculators.emt import EMT
-    from ase.calculators.vasp import VASP
+    from ase.calculators.emt import EMT
     from ase.db import connect
     from ase.visualize import view
     from microkinetics_toolkit.utils import get_adsorbate_type
@@ -22,23 +21,22 @@ def calc_reaction_energy(reaction_file="oer.txt", surface=None, verbose=False):
     deltaEs = np.array([])
 
     # define calculator for molecules and surfaces separately
-    calculator = "emt"
     if "emt" in calculator:
         calc_mol  = EMT()
         calc_surf = EMT()
     elif "vasp" in calculator:
         calc_mol  = set_vasp_calculator()
         calc_surf = set_vasp_calculator()
-    ellif "ocp" in valculator:
+    elif "ocp" in valculator:
         calc_mol  = set_ocp_calculator()  # do not work
         calc_surf = set_ocp_calculator()
-
     else:
-        print("emt or vasp")
+        raise ValueError("Choose from emt, vasp, ocp.")
         quit()
 
+    print(f"calculator = {calculator}")
 
-    # rotationa angle for adsorbed molecules
+    # rotational angle for adsorbed molecules
     rotation = {"HO": [180, "x"], "HO2": [180, "x"]}
 
     for irxn in range(rxn_num):
@@ -57,6 +55,7 @@ def calc_reaction_energy(reaction_file="oer.txt", surface=None, verbose=False):
 
             E = 0.0
             for imol, mol in enumerate(mols):
+                print(f"mol = {mol}")
                 if mol[0] == "surf":
                     atoms = surface_
                 else:
@@ -172,12 +171,34 @@ def calc_overpotential_oer_orr(reaction_file, deltaEs, T=298.15, reaction_type="
     return eta
 
 
-def set_vasp_calculator():
+def set_vasp_calculator(atom_type="surface", kpt=1):
     """
     Set up a calculator using VASP.
+
+    Args:
+        atom_type: "molecule", "surface" or "solid".
+        kpt: k-points in x and y directions.
     """
-    # return calc
-    return None
+    from ase.calculators.vasp import Vasp
+
+    if atom_type == "molecule":
+        kpts = [1, 1, 1]
+        ismear = 0
+        lreal = "True"
+    elif atom_type == "surface":
+        kpts = [kpt, kpt, 1]
+        ismear = 0 if kpts == 1 else 1
+        lreal = "True"
+    elif atom_type == "solid":
+        kpts = [kpt, kpt, kpt]
+        ismear = 0 if kpts == 1 else 1
+        lreal = "False"
+    else:
+        print("some error")
+        quit()
+
+    calc = Vasp(prec="Normal", xc="pbe", kpts=kpts, ismear=ismear, algo="VeryFast", lreal=lreal)
+    return calc
 
 
 def set_ocp_calculator():
@@ -202,6 +223,7 @@ if __name__ == "__main__":
 
     cif_file = "LaMnO3.cif"
     surface = make_surface_from_cif(cif_file, indices=(0, 0, 1), vacuum=10.0)
+    surface.pbc = True
 
     # for EMT
     surface = replace_element(surface, from_element="La", to_element="Al")
@@ -212,7 +234,7 @@ if __name__ == "__main__":
     surface = fix_lower_surface(surface)
 
     reaction_file = "orr2.txt"
-    deltaEs = calc_reaction_energy(reaction_file=reaction_file, surface=surface)
+    deltaEs = calc_reaction_energy(reaction_file=reaction_file, surface=surface, calculator="vasp")
     print(f"deltaEs = {deltaEs}")
     eta = calc_overpotential_oer_orr(reaction_file=reaction_file, deltaEs=deltaEs, reaction_type="orr", verbose=True)
     print(f"eta = {eta:5.3f} eV")
