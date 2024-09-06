@@ -4,7 +4,8 @@ def calc_reaction_energy(reaction_file="oer.txt", surface=None, verbose=False):
     """
     import numpy as np
     from ase.build import add_adsorbate
-    from ase.calculators.emt import EMT
+    # from ase.calculators.emt import EMT
+    from ase.calculators.vasp import VASP
     from ase.db import connect
     from ase.visualize import view
     from microkinetics_toolkit.utils import get_adsorbate_type
@@ -21,11 +22,21 @@ def calc_reaction_energy(reaction_file="oer.txt", surface=None, verbose=False):
     deltaEs = np.array([])
 
     # define calculator for molecules and surfaces separately
-    calc_mol = EMT()
-    calc_surf = EMT()
+    calculator = "emt"
+    if "emt" in calculator:
+        calc_mol  = EMT()
+        calc_surf = EMT()
+    elif "vasp" in calculator:
+        calc_mol  = set_vasp_calculator()
+        calc_surf = set_vasp_calculator()
+    ellif "ocp" in valculator:
+        calc_mol  = set_ocp_calculator()  # do not work
+        calc_surf = set_ocp_calculator()
 
-    # calc_mol  = set_ocp_calculator()  # do not work
-    # calc_surf = set_ocp_calculator()
+    else:
+        print("emt or vasp")
+        quit()
+
 
     # rotationa angle for adsorbed molecules
     rotation = {"HO": [180, "x"], "HO2": [180, "x"]}
@@ -72,7 +83,7 @@ def calc_reaction_energy(reaction_file="oer.txt", surface=None, verbose=False):
 
                     atoms = surface_.copy()
                     atoms.calc = calc_surf
-                    view(atoms)
+                    # view(atoms)
                 else:
                     print("some error")
                     quit()
