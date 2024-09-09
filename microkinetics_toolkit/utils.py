@@ -226,7 +226,6 @@ def get_preexponential(reactionfile):
     mass_prod = np.array(rxn_num * [range(len(p_ads[0]))], dtype="f")
 
     for irxn in range(rxn_num):
-        print("--------- %d ---------" % irxn)
         #
         # reactants
         #
