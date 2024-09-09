@@ -28,7 +28,7 @@ if __name__ == "__main__":
     reaction_file = "orr_alkaline2.txt"
 
     deltaEs = calc_reaction_energy(reaction_file=reaction_file, surface=surface, calculator="vasp", verbose=True)
-
     eta = calc_overpotential_oer_orr(reaction_file=reaction_file, deltaEs=deltaEs, reaction_type="orr", verbose=True)
+    eta = np.abs(eta)
 
     print(f"eta = {eta:5.3f} eV")
