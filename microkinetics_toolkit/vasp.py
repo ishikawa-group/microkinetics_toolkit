@@ -29,6 +29,8 @@ def set_vasp_calculator(atom_type="molecule", dfttype="gga", kpt=1, do_optimizat
     # common setting
     xc = "pbe"
     encut = 400.0
+    ediff  =  1.0e-3
+    ediffg = -5.0e-1
     lorbit = 10
     algo = "Normal"
     nelm = 30
@@ -50,18 +52,20 @@ def set_vasp_calculator(atom_type="molecule", dfttype="gga", kpt=1, do_optimizat
     if do_optimization:
         ibrion = 2
         potim = 0.1
-        nsw = 5
+        nsw = 100
     else:
         ibrion = 0
         potim = 0.0
         nsw = 0
 
-    calc = Vasp(prec="Normal", xc=xc, encut=encut, kpts=kpts, ismear=ismear, ibrion=ibrion, potim=potim, nsw=nsw, algo=algo, 
+    calc = Vasp(prec="Normal", xc=xc, encut=encut, kpts=kpts, ismear=ismear, ediff=ediff, ediffg=ediffg,
+                ibrion=ibrion, potim=potim, nsw=nsw, algo=algo, 
                 ispin=ispin, npar=npar, nsim=nsim, nelm=nelm, lreal=lreal, lorbit=lorbit, kgamma=kgamma,
                 )
 
     if dfttype == "plus_u":
-        calc = Vasp(prec="Normal", xc=xc, encut=encut, kpts=kpts, ismear=ismear, ibrion=ibrion, potim=potim, nsw=nsw, algo=algo, 
+        calc = Vasp(prec="Normal", xc=xc, encut=encut, kpts=kpts, ismear=ismear, ediff=ediff, ediffg=ediffg,
+                    ibrion=ibrion, potim=potim, nsw=nsw, algo=algo, 
                     ispin=ispin, npar=npar, nsim=nsim, nelm=nelm, lreal=lreal, lorbit=lorbit, kgamma=kgamma,
                     ldau=ldau, ldautype=ldautype, ldau_luj=ldau_luj,
                     )
