@@ -15,10 +15,10 @@
 
   $$
     \begin{align*}
-      & 1)\ \ce{O2(g) + $*$ + H+ + e- -> OOH$*$} \\
-      & 2)\ \ce{OOH$*$ + H+ + e- -> O$*$ + H2O} \\
-      & 3)\ \ce{O$*$ + H+ + e- -> OH$*$} \\
-      & 4)\ \ce{OH$*$ + H+ + e- -> H2O + $*$}
+      & 1)\ \ce{O2(g) + surf + H+ + e- -> OOH-surf} \\
+      & 2)\ \ce{OOH-surf + H+ + e- -> O-surf + H2O} \\
+      & 3)\ \ce{O-surf + H+ + e- -> OH-surf} \\
+      & 4)\ \ce{OH-surf + H+ + e- -> H2O + surf}
     \end{align*}
   $$
 
@@ -32,9 +32,9 @@
 
 * $\eta$ is a key parameter to evaluate the catalytic activity, since it is
   the potential difference from the thermodynamically ideal potential (1.23 V).
-* To peform the above procedure, we need to evaluate the $\DeltaG s$.
+* To peform the above procedure, we need to evaluate the $\Delta Gs$.
   for each elementary reactions. This is done by `calc_reaction_energy.`
-* DeltaGs should be passed to `rate_oer_and_orr` then $\eta$ is returned.
+* $\Delta Gs$ should be passed to `calc_overpotential_oer_orr` then $\eta$ is returned.
 
 ```python
 import numpy as np
@@ -65,7 +65,6 @@ reaction_file = "orr_alkaline2.txt"
 
 deltaEs = calc_reaction_energy(reaction_file=reaction_file, surface=surface, calculator="vasp", verbose=True)
 eta = calc_overpotential_oer_orr(reaction_file=reaction_file, deltaEs=deltaEs, reaction_type="orr", verbose=True)
-eta = np.abs(eta)
 
 print(f"overpotential = {eta:5.3f} eV")
 
