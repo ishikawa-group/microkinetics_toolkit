@@ -546,7 +546,10 @@ def make_surface_from_cif(cif_file, indices=(1, 0, 0), vacuum=10.0):
     bulk = read(cif_file)
     bulk = bulk*repeat
     surf = surface(bulk, indices=indices, layers=2, vacuum=vacuum)
+
     surf.translate([0, 0, -vacuum+0.1])
+    surf.pbc = True
+
     return surf
 
 
