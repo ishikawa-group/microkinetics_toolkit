@@ -34,7 +34,7 @@
   the potential difference from the thermodynamically ideal potential (1.23 V).
 * To peform the above procedure, we need to evaluate the $\Delta Gs$.
   for each elementary reactions. This is done by `calc_reaction_energy.`
-* DeltaGs should be passed to `rate_oer_and_orr` then $\eta$ is returned.
+* $\Delta Gs$ should be passed to `calc_overpotential_oer_orr` then $\eta$ is returned.
 
 ```python
 import numpy as np
