@@ -41,6 +41,7 @@ from microkinetics_toolkit.utils import make_surface_from_cif
 from microkinetics_toolkit.utils import remove_layers
 from microkinetics_toolkit.utils import replace_element
 from microkinetics_toolkit.utils import fix_lower_surface
+from microkinetics_toolkit.calc_reaction_energy import calc_reaction_energy
 from ase.visualize import view
 
 cif_file = "LaMnO3.cif"
