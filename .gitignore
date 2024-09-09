@@ -1,1 +1,4 @@
 *.pt
+work
+*.sh.o*
+*.sh.e*

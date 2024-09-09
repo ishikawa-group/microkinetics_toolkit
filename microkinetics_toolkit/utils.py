@@ -1,3 +1,7 @@
+import numpy as np
+from ase import Atom, Atoms
+
+
 def read_reactionfile(file):
     """
     Read reaction file and return reactants, reactions, and products.
@@ -44,6 +48,9 @@ def read_reactionfile(file):
 
 
 def return_lines_of_reactionfile(file):
+    """
+    Return lines of reaction file.
+    """
     import re
 
     # drop comment and branck lines
@@ -58,6 +65,9 @@ def return_lines_of_reactionfile(file):
 
 
 def remove_space(obj):
+    """
+    Remove space in the object.
+    """
     newobj = [0] * len(obj)
     if isinstance(obj, str):
         #
@@ -96,7 +106,9 @@ def remove_space(obj):
 
 
 def get_reac_and_prod(reactionfile):
-    # form reactant and product information
+    """
+    Form reactant and product information.
+    """
     (reac, rxn, prod) = read_reactionfile(reactionfile)
 
     rxn_num = len(rxn)
@@ -194,11 +206,12 @@ def get_number_of_reaction(reactionfile):
 
 
 def get_preexponential(reactionfile):
-    #
-    # ! not needed for MATLAB use
-    #
+    """
+    Return pre-exponential factor.
+    Not needed for MATLAB use
+    """
     from ase.collections import methane
-    import numpy as np
+
     #
     # calculate pre-exponential factor
     #
@@ -213,7 +226,6 @@ def get_preexponential(reactionfile):
     mass_prod = np.array(rxn_num * [range(len(p_ads[0]))], dtype="f")
 
     for irxn in range(rxn_num):
-        print("--------- %d ---------" % irxn)
         #
         # reactants
         #
@@ -235,14 +247,12 @@ def get_preexponential(reactionfile):
     return Afor, Arev
 
 
-def get_rateconstant(reactionfile, Afor, Arev, Efor, Erev, T):
-    #
-    # ! not needed for MATLAB use
-    #
-    import numpy as np
-    #
+def get_rate_coefficient(reactionfile, Afor, Arev, Efor, Erev, T):
+    """
+    Return rate coefficient.
+    Not needed for MATLAB use
+    """
     # calculate rate constant
-    #
     # (r_ads, r_site, r_coef,  p_ads, p_site, p_coef) = get_reac_and_prod(reactionfile)
 
     rxn_num = get_number_of_reaction(reactionfile)
@@ -260,10 +270,12 @@ def get_rateconstant(reactionfile, Afor, Arev, Efor, Erev, T):
 
 
 def read_speciesfile(speciesfile):
+    """
+    read species
+    """
     f = open(speciesfile)
 
     species = f.read()
-
     species = species.replace('[', '')
     species = species.replace(']', '')
     species = species.replace(' ', '')
@@ -286,8 +298,10 @@ def remove_parentheses(file):
 
 
 def get_species_num(*species):
-    # Return what is the number of species in speciesfile.
-    # If argument is not present, returns the number of species.
+    """
+    Return what is the number of species in speciesfile.
+    If argument is not present, returns the number of species.
+    """
     from reaction_tools import read_speciesfile
 
     speciesfile = "species.txt"
@@ -303,6 +317,9 @@ def get_species_num(*species):
 
 
 def get_adsorption_sites(infile):
+    """
+    Read adsorption sites.
+    """
     from reaction_tools import remove_space
 
     f = open(infile, "r")
@@ -322,9 +339,10 @@ def get_adsorption_sites(infile):
 
 
 def find_closest_atom(surf, offset=(0, 0)):
-    from ase import Atom
+    """
+    Find the closest atom to the adsorbate.
+    """
     from ase.build import add_adsorbate
-    import numpy as np
 
     dummy = Atom('H', (0, 0, 0))
     ads_height = 0.1
@@ -342,9 +360,11 @@ def find_closest_atom(surf, offset=(0, 0)):
 
 
 def sort_atoms_by_z(atoms):
-    from ase import Atoms
-    import numpy as np
+    """
+    Sort atoms by z-coordinate.
+    """
     import collections
+
     #
     # keep information for original Atoms
     #
@@ -409,6 +429,9 @@ def get_number_of_valence_electrons(atoms):
 
 
 def read_charge(mol):
+    """
+    Read charge from molecule.
+    """
     charge = 0.0  # initial
     if "^" in mol:
         neutral = False
@@ -422,7 +445,7 @@ def read_charge(mol):
 
 def remove_side_and_flip(mol):
     """
-    remove SIDE and FLIP in molecule
+    Remove SIDE and FLIP in molecule
     """
     if '-SIDEx' in mol:
         mol = mol.replace('-SIDEx', '')
@@ -442,7 +465,7 @@ def remove_side_and_flip(mol):
 
 def neb_copy_contcar_to_poscar(nimages):
     """
-    copy 0X/CONTCAR to 0X/POSCAR after NEB run
+    Copy 0X/CONTCAR to 0X/POSCAR after NEB run.
     """
     import os
     for images in range(nimages):
@@ -450,7 +473,14 @@ def neb_copy_contcar_to_poscar(nimages):
 
 
 def make_it_closer_by_exchange(atom1, atom2, thre=0.05):
-    # thre: when distance is larger than this value, do switch
+    """
+    Exchange atoms to make it closer.
+
+    Args:
+        atom1 (Atoms): Atoms object
+        atom2 (Atoms): Atoms object
+        thre: when distance is larger than this value, do switch
+    """
     from ase.geometry import distance
 
     natoms = len(atom1)
@@ -505,15 +535,391 @@ def get_adsorbate_type(adsorbate, site):
     return ads_type
 
 
-def make_surface_from_cif(cif_file):
+def make_surface_from_cif(cif_file, indices=(1, 0, 0), vacuum=10.0):
     """
     Make a surface from a CIF file.
     """
-    from ase.io import read
     from ase.build import surface
+    from ase.io import read
 
     repeat = [1, 1, 1]
     bulk = read(cif_file)
     bulk = bulk*repeat
-    surf = surface(bulk, indices=(1, 0, 0), layers=2, vacuum=10.0)
+    surf = surface(bulk, indices=indices, layers=2, vacuum=vacuum)
+
+    surf.translate([0, 0, -vacuum+0.1])
+    surf.pbc = True
+
     return surf
+
+
+def replace_element(atoms, from_element, to_element, percent_replace=100):
+    import random
+
+    from ase.build import sort
+
+    elements = atoms.get_chemical_symbols()
+    num_from_elements = elements.count(from_element)
+    num_replace = int((percent_replace/100) * num_from_elements)
+
+    indices = [i for i, j in enumerate(elements) if j == from_element]
+    random_item = random.sample(indices, num_replace)
+    for i in random_item:
+        atoms[i].symbol = to_element
+
+    atoms = sort(atoms)
+    return atoms
+
+
+def run_packmol(xyz_file, a, num, outfile):
+    import os
+
+    packmol = "/Users/ishi/packmol/packmol"
+    filetype = "xyz"
+
+    cell1 = [0.0, 0.0, 0.0, a, a, a]
+    cell2 = " ".join(map(str, cell1))
+
+    f = open("pack_tmp.inp", "w")
+    text = ["tolerance 2.0"             + "\n",
+            "output "     + outfile     + "\n",
+            "filetype "   + filetype    + "\n",
+            "structure "  + xyz_file    + "\n",
+            "  number "   + str(num)    + "\n",
+            "  inside box " + cell2     + "\n",
+            "end structure"]
+    f.writelines(text)
+    f.close()
+
+    run_string = packmol + " < pack_tmp.inp"
+
+    os.system(run_string)
+
+    # os.system("rm pack_tmp.inp")
+
+
+def json_to_csv(jsonfile, csvfile):
+    import json
+
+    import pandas as pd
+    from pandas.io.json import json_normalize
+    f = open(jsonfile, "r")
+    d = json.load(f)
+
+    dd = []
+    nrec = len(d)
+    for i in range(1, nrec):
+        if str(i) in d:
+            tmp = d[str(i)]
+            dd.append(json_normalize(tmp))
+
+    ddd = pd.concat(dd)
+
+    newcol = []
+    for key in ddd.columns:
+        key = key.replace("calculator_parameters.", "")
+        key = key.replace("key_value_pairs.", "")
+        key = key.replace("data.", "")
+        newcol.append(key)
+
+    ddd.columns = newcol
+
+    # sort data by "num"
+    if "num" in ddd.columns:
+        ddd2 = ddd.set_index("num")
+        ddd  = ddd2.sort_index()
+
+    ddd.to_csv(csvfile)
+
+
+def load_ase_json(jsonfile):
+    import json
+
+    import pandas as pd
+    f = open(jsonfile, "r")
+    d = json.load(f)
+
+    dd = []
+    nrec = len(d)
+    for i in range(1, nrec):
+        if str(i) in d:
+            tmp = d[str(i)]
+            dd.append(pd.json_normalize(tmp))
+
+    ddd = pd.concat(dd)
+
+    newcol = []
+    for key in ddd.columns:
+        key = key.replace("calculator_parameters.", "")
+        key = key.replace("key_value_pairs.", "")
+        key = key.replace("data.", "")
+        newcol.append(key)
+
+    ddd.columns = newcol
+
+    # sort data by "num"
+    if "num" in ddd.columns:
+        ddd2 = ddd.set_index("num")
+        ddd  = ddd2.sort_index()
+
+    return ddd
+
+
+def delete_num_from_json(num, jsonfile):
+    from ase.db import connect
+
+    db = connect(jsonfile)
+    id_ = db.get(num=num).id
+    db.delete([id_])
+
+
+def sort_atoms_by(atoms, xyz="x"):
+    # keep information for original Atoms
+    tags = atoms.get_tags()
+    pbc  = atoms.get_pbc()
+    cell = atoms.get_cell()
+    dtype = [("idx", int), (xyz, float)]
+
+    newatoms = Atoms()
+    symbols = list(set(atoms.get_chemical_symbols()))
+    for symbol in symbols:
+        subatoms = Atoms(list(filter(lambda x: x.symbol == symbol, atoms)))
+        atomlist = np.array([], dtype=dtype)
+        for idx, atom in enumerate(subatoms):
+            if xyz == "x":
+                tmp = np.array([(idx, atom.x)], dtype=dtype)
+            elif xyz == "y":
+                tmp = np.array([(idx, atom.y)], dtype=dtype)
+            else:
+                tmp = np.array([(idx, atom.z)], dtype=dtype)
+
+            atomlist = np.append(atomlist, tmp)
+
+        atomlist = np.sort(atomlist, order=xyz)
+
+        for i in atomlist:
+            idx = i[0]
+            newatoms.append(subatoms[idx])
+
+    # restore
+    newatoms.set_tags(tags)
+    newatoms.set_pbc(pbc)
+    newatoms.set_cell(cell)
+
+    return newatoms
+
+
+def get_number_of_layers(atoms):
+    symbols = list(set(atoms.get_chemical_symbols()))
+    symbols = sorted(symbols)
+    nlayers = []
+
+    for symbol in symbols:
+        subatoms = Atoms(list(filter(lambda x: x.symbol == symbol, atoms)))
+        pos  = subatoms.positions
+        zpos = np.round(pos[:, 2], decimals=4)
+        nlayers.append(len(list(set(zpos))))
+
+    return nlayers
+
+
+def set_tags_by_z(atoms):
+    import pandas as pd
+
+    pbc  = atoms.get_pbc()
+    cell = atoms.get_cell()
+
+    newatoms = Atoms()
+    symbols = list(set(atoms.get_chemical_symbols()))
+    symbols = sorted(symbols)
+
+    for symbol in symbols:
+        subatoms = Atoms(list(filter(lambda x: x.symbol == symbol, atoms)))
+        pos  = subatoms.positions
+        zpos = np.round(pos[:, 2], decimals=1)
+        bins = list(set(zpos))
+        bins = np.sort(bins)
+        bins = np.array(bins) + 1.0e-2
+        bins = np.insert(bins, 0, 0)
+
+        labels = []
+        for i in range(len(bins)-1):
+            labels.append(i)
+
+        # tags = pd.cut(zpos, bins=bins, labels=labels).to_list()
+        tags = pd.cut(zpos, bins=bins, labels=labels).tolist()
+
+        subatoms.set_tags(tags)
+        newatoms += subatoms
+
+    # restore
+    newatoms.set_pbc(pbc)
+    newatoms.set_cell(cell)
+
+    return newatoms
+
+
+def remove_layers(atoms=None, element=None, n_layers=1):
+    """
+    Remove layers of symbol at high-in-z.
+
+    Args:
+        atoms (Atoms): Atoms object
+        element (str): Element symbol
+        n_layers(int): Number of layers (of specified element) to remove
+    """
+    pbc  = atoms.get_pbc()
+    cell = atoms.get_cell()
+
+    atoms_copy = atoms.copy()
+    atoms_copy = sort_atoms_by(atoms_copy, xyz="z")  # sort
+    atoms_copy = set_tags_by_z(atoms_copy)  # set tags
+
+    newatoms = Atoms()
+
+    tags = atoms_copy.get_tags()
+    cond = [i == element for i in atoms_copy.get_chemical_symbols()]
+
+    maxtag = max(list(tags[cond]))
+
+    for i, atom in enumerate(atoms_copy):
+        if atom.tag >= maxtag - n_layers + 1 and atom.symbol == element:
+            # remove this atom
+            pass
+        else:
+            newatoms += atom
+
+    newatoms.set_pbc(pbc)
+    newatoms.set_cell(cell)
+
+    return newatoms
+
+
+def fix_lower_surface(atoms, adjust_layer=None):
+    """
+    Fix lower surface atoms. By default, lower half (controled by tag) is fixed.
+
+    Args:
+        atoms (Atoms): Atoms object
+        adjust_layer (list): List of element-wise layers to adjust fixing. Positive means more layers are fixed.
+    """
+    from ase.constraints import FixAtoms
+
+    newatoms = atoms.copy()
+    newatoms = sort_atoms_by(newatoms, xyz="z")  # sort
+    newatoms = set_tags_by_z(newatoms)  # set tags
+
+    # prepare symbol dict
+    symbols_ = list(set(atoms.get_chemical_symbols()))
+    symbols_ = sorted(symbols_)
+    symbols = {}
+    for i, sym in enumerate(symbols_):
+        symbols.update({sym: i})
+
+    # Determine fixlayer, which is a list of elements. Half of nlayers.
+    nlayers = get_number_of_layers(newatoms)
+
+    # check
+    div = [i // 2 for i in nlayers]
+    mod = [i % 2 for i in nlayers]
+
+    fixlayers = [i + j for (i, j) in zip(div, mod)]
+
+    if adjust_layer is not None:
+        fixlayers = [sum(x) for x in zip(fixlayers, adjust_layer)]
+
+    fixlist = []  # list of fixed atoms
+
+    # tags = newatoms.get_tags()
+    # minind = np.argmin(tags)
+    # maxind = np.argmax(tags)
+
+    # lowest_z  = newatoms[minind].position[2]
+    # highest_z = newatoms[maxind].position[2]
+    # z_thre = (highest_z - lowest_z) / 2 + lowest_z
+
+    for iatom in newatoms:
+        ind = symbols[iatom.symbol]
+        # z_pos = iatom.position[2]
+
+        # if iatom.tag < fixlayers[ind] and z_pos < z_thre:
+        if iatom.tag < fixlayers[ind]:
+            fixlist.append(iatom.index)
+        else:
+            pass
+
+    constraint = FixAtoms(indices=fixlist)
+    newatoms.constraints = constraint
+
+    return newatoms
+
+
+def find_highest(json, score):
+    import pandas as pd
+
+    df = pd.read_json(json)
+    df = df.set_index("unique_id")
+    df = df.dropna(subset=[score])
+    df = df.sort_values(score, ascending=False)
+
+    best = df.iloc[0].name
+
+    return best
+
+
+def make_step(atoms):
+    newatoms = atoms.copy()
+    newatoms = sort_atoms_by(newatoms, xyz="z")
+
+    nlayer = get_number_of_layers(newatoms)
+    nlayer = nlayer[0]
+    perlayer  = len(newatoms) // nlayer
+    toplayer  = newatoms[-perlayer:]
+    top_layer = sort_atoms_by(toplayer, xyz="y")
+
+    # first remove top layer then add sorted top layer
+    del newatoms[-perlayer:]
+    newatoms += top_layer
+
+    remove = perlayer // 2
+
+    nstart = perlayer*(nlayer-1)  # index for the atom starting the top layer
+    del newatoms[nstart:nstart+remove]
+
+    return newatoms
+
+
+def mirror_invert(atoms, direction="x"):
+    """
+    Mirror invert the surface in the specified direction.
+
+    Args:
+        atoms: Atoms object
+        direction: "x", "y", or "z"
+    """
+    pos  = atoms.get_positions()
+    cell = atoms.cell
+
+    # set position and cell
+    if direction == "x":
+        pos[:, 0] = -pos[:, 0]
+        cell = [[-cell[i][0], cell[i][1], cell[i][2]] for i in range(3)]
+    elif direction == "y":
+        pos[:, 1] = -pos[:, 1]
+        cell = [[cell[i][0], -cell[i][1], cell[i][2]] for i in range(3)]
+    elif direction == "z":
+        highest_z = pos[:, 2].max()
+        atoms.translate([0, 0, -highest_z])
+        pos[:, 2] = -pos[:, 2]
+        cell = [[cell[i][0], cell[i][1], -cell[i][2]] for i in range(3)]
+    else:
+        print("direction must be x, y, or z")
+        quit()
+
+    atoms.set_positions(pos)
+
+    cell = np.array(cell)
+    cell = np.round(cell + 1.0e-5, decimals=4)
+    atoms.set_cell(cell)
+
+    return atoms
