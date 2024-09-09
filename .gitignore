@@ -2,3 +2,4 @@
 work
 *.sh.o*
 *.sh.e*
+**/__pycache__/**
