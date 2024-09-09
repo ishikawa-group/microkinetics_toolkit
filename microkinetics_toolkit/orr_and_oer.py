@@ -66,6 +66,7 @@ def calc_overpotential_oer_orr(reaction_file, deltaEs, T=298.15, reaction_type="
         eta = np.max(deltaGs) - 1.23
     elif reaction_type == "orr":
         eta = 1.23 - np.max(deltaGs)
+        eta = np.abs(eta)  # necessary?
     else:
         print("some error")
         quit()
