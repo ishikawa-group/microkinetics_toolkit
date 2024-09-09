@@ -30,7 +30,7 @@ def set_vasp_calculator(atom_type="molecule", dfttype="gga", kpt=1, do_optimizat
     xc = "pbe"
     encut = 400.0
     ediff  =  1.0e-3
-    ediffg = -5.0e-1
+    ediffg = -1.0e-0
     lorbit = 10
     algo = "Normal"
     nelm = 30
