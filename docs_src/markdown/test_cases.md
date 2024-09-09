@@ -15,10 +15,10 @@
 
   $$
     \begin{align*}
-      & 1)\ \ce{O2(g) + surf + H+ + e- -> OOH-surf} \\
-      & 2)\ \ce{OOH-surf + H+ + e- -> O-surf + H2O} \\
-      & 3)\ \ce{O-surf + H+ + e- -> OH-surf} \\
-      & 4)\ \ce{OH-surf + H+ + e- -> H2O + surf}
+      & 1)\ \ce{O2(g) + $*$ + H+ + e- -> OOH$*$} \\
+      & 2)\ \ce{OOH$*$ + H+ + e- -> O$*$ + H2O} \\
+      & 3)\ \ce{O$*$ + H+ + e- -> OH$*$} \\
+      & 4)\ \ce{OH$*$ + H+ + e- -> H2O + $*$}
     \end{align*}
   $$
 
