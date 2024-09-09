@@ -29,10 +29,11 @@ def set_vasp_calculator(atom_type="molecule", dfttype="gga", kpt=1, do_optimizat
     # common setting
     xc = "pbe"
     encut = 400.0
-    ediff  =  1.0e-3
+    ediff  =  1.0e-4
     ediffg = -1.0e-0
     lorbit = 10
     algo = "Normal"
+    nelmin = 5
     nelm = 30
     npar = 2
     nsim = npar
@@ -60,13 +61,13 @@ def set_vasp_calculator(atom_type="molecule", dfttype="gga", kpt=1, do_optimizat
 
     calc = Vasp(prec="Normal", xc=xc, encut=encut, kpts=kpts, ismear=ismear, ediff=ediff, ediffg=ediffg,
                 ibrion=ibrion, potim=potim, nsw=nsw, algo=algo, 
-                ispin=ispin, npar=npar, nsim=nsim, nelm=nelm, lreal=lreal, lorbit=lorbit, kgamma=kgamma,
+                ispin=ispin, npar=npar, nsim=nsim, nelmin=nelmin, nelm=nelm, lreal=lreal, lorbit=lorbit, kgamma=kgamma,
                 )
 
     if dfttype == "plus_u":
         calc = Vasp(prec="Normal", xc=xc, encut=encut, kpts=kpts, ismear=ismear, ediff=ediff, ediffg=ediffg,
                     ibrion=ibrion, potim=potim, nsw=nsw, algo=algo, 
-                    ispin=ispin, npar=npar, nsim=nsim, nelm=nelm, lreal=lreal, lorbit=lorbit, kgamma=kgamma,
+                    ispin=ispin, npar=npar, nsim=nsim, nelmin=nelmin, nelm=nelm, lreal=lreal, lorbit=lorbit, kgamma=kgamma,
                     ldau=ldau, ldautype=ldautype, ldau_luj=ldau_luj,
                     )
 
