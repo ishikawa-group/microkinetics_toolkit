@@ -1,4 +1,4 @@
-def calc_overpotential_oer_orr(reaction_file, deltaEs, T=298.15, reaction_type="oer", verbose=False):
+def get_overpotential_oer_orr(reaction_file, deltaEs, T=298.15, reaction_type="oer", verbose=False):
     """
     Calculate overpotential for OER or ORR.
     """
