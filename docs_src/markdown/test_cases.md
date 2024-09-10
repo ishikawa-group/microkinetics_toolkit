@@ -33,8 +33,8 @@
 * $\eta$ is a key parameter to evaluate the catalytic activity, since it is
   the potential difference from the thermodynamically ideal potential (1.23 V).
 * To peform the above procedure, we need to evaluate the $\Delta Gs$.
-  for each elementary reactions. This is done by `calc_reaction_energy.`
-* $\Delta Gs$ should be passed to `calc_overpotential_oer_orr` then $\eta$ is returned.
+  for each elementary reactions. This is done by `get_reaction_energy.`
+* $\Delta Gs$ should be passed to `get_overpotential_oer_orr` then $\eta$ is returned.
 
 ```python
 import numpy as np
@@ -42,29 +42,26 @@ from microkinetics_toolkit.utils import make_surface_from_cif
 from microkinetics_toolkit.utils import remove_layers
 from microkinetics_toolkit.utils import replace_element
 from microkinetics_toolkit.utils import fix_lower_surface
-from microkinetics_toolkit.calc_reaction_energy import calc_reaction_energy
-from microkinetics_toolkit.orr_and_oer import calc_overpotential_oer_orr 
+from microkinetics_toolkit.get_reaction_energy import get_reaction_energy
+from microkinetics_toolkit.orr_and_oer import get_overpotential_oer_orr 
 
+# read cif file and make surface
 cif_file = "LaMnO3.cif"
 surface = make_surface_from_cif(cif_file, indices=(0, 0, 1), vacuum=10.0)
 
-# for EMT
-use_emt = False
-if use_emt:
-    surface = replace_element(surface, from_element="La", to_element="Al")
-    surface = replace_element(surface, from_element="Mn", to_element="Pt")
-    surface = remove_layers(surface, element="Al", n_layers=1)
-else:
-    surface = remove_layers(surface, element="La", n_layers=1)
-
+# adjust surface structure
+surface = remove_layers(surface, element="La", n_layers=1)
 surface = remove_layers(surface, element="O", n_layers=2)
+
+# fix lower part
 surface = fix_lower_surface(surface)
 
 # reaction_file = "orr_alkaline.txt"
 reaction_file = "orr_alkaline2.txt"
 
-deltaEs = calc_reaction_energy(reaction_file=reaction_file, surface=surface, calculator="vasp", verbose=True)
-eta = calc_overpotential_oer_orr(reaction_file=reaction_file, deltaEs=deltaEs, reaction_type="orr", verbose=True)
+# do calculation
+deltaEs = get_reaction_energy(reaction_file=reaction_file, surface=surface, calculator="vasp")
+eta = get_overpotential_oer_orr(reaction_file=reaction_file, deltaEs=deltaEs, reaction_type="orr")
 
 print(f"overpotential = {eta:5.3f} eV")
-
+```

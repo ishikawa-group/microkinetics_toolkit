@@ -1,4 +1,4 @@
-def calc_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt", verbose=False):
+def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt", verbose=False):
     """
     Calculate reaction energy for each reaction.
     """
