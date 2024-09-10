@@ -15,4 +15,3 @@ catalytic study.
 
    /markdown/usage.md
    /markdown/test_cases.md
-

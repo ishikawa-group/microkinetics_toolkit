@@ -113,20 +113,39 @@ This maximum <span class="math notranslate nohighlight">\(\Delta G\)</span> is t
     \eta = \max[\Delta G_1, \Delta G_2, \Delta G_3, \Delta G_4]
   \]</div>
 </li>
-<li><p>eta is a key parameter to evaluate the catalytic activity, since it is
+<li><p><span class="math notranslate nohighlight">\(\eta\)</span> is a key parameter to evaluate the catalytic activity, since it is
 the potential difference from the thermodynamically ideal potential (1.23 V).</p></li>
-<li><p>To peform the above procedure, we need to evaluate the deltaGs
-for each elementary reactions. This is done by <code class="docutils literal notranslate"><span class="pre">calc_reaction_energy.</span></code></p></li>
-<li><p>DeltaGs should be passed to <code class="docutils literal notranslate"><span class="pre">rate_oer_and_orr</span></code> then <span class="math notranslate nohighlight">\(\eta\)</span> is returned.</p></li>
+<li><p>To peform the above procedure, we need to evaluate the <span class="math notranslate nohighlight">\(\Delta Gs\)</span>.
+for each elementary reactions. This is done by <code class="docutils literal notranslate"><span class="pre">get_reaction_energy.</span></code></p></li>
+<li><p><span class="math notranslate nohighlight">\(\Delta Gs\)</span> should be passed to <code class="docutils literal notranslate"><span class="pre">get_overpotential_oer_orr</span></code> then <span class="math notranslate nohighlight">\(\eta\)</span> is returned.</p></li>
 </ul>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">microkinetics_toolkit</span> <span class="kn">import</span> <span class="n">calc_reaction_energy</span>
-<span class="kn">from</span> <span class="nn">microkinetics_toolkit</span> <span class="kn">import</span> <span class="n">rate_oer_and_orr</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">microkinetics_toolkit.utils</span> <span class="kn">import</span> <span class="n">make_surface_from_cif</span>
+<span class="kn">from</span> <span class="nn">microkinetics_toolkit.utils</span> <span class="kn">import</span> <span class="n">remove_layers</span>
+<span class="kn">from</span> <span class="nn">microkinetics_toolkit.utils</span> <span class="kn">import</span> <span class="n">replace_element</span>
+<span class="kn">from</span> <span class="nn">microkinetics_toolkit.utils</span> <span class="kn">import</span> <span class="n">fix_lower_surface</span>
+<span class="kn">from</span> <span class="nn">microkinetics_toolkit.get_reaction_energy</span> <span class="kn">import</span> <span class="n">get_reaction_energy</span>
+<span class="kn">from</span> <span class="nn">microkinetics_toolkit.orr_and_oer</span> <span class="kn">import</span> <span class="n">get_overpotential_oer_orr</span> 
 
-<span class="n">reaction_file</span> <span class="o">=</span> <span class="s2">&quot;orr.txt&quot;</span>
-<span class="n">deltaGs</span> <span class="o">=</span> <span class="n">calc_reaction_energy</span><span class="p">(</span><span class="n">reaction_file</span><span class="o">=</span><span class="n">reaction_file</span><span class="p">)</span>
-<span class="n">eta</span> <span class="o">=</span> <span class="n">rate_oer_and_orr</span><span class="p">(</span><span class="n">deltaGs</span><span class="p">)</span>
+<span class="c1"># read cif file and make surface</span>
+<span class="n">cif_file</span> <span class="o">=</span> <span class="s2">&quot;LaMnO3.cif&quot;</span>
+<span class="n">surface</span> <span class="o">=</span> <span class="n">make_surface_from_cif</span><span class="p">(</span><span class="n">cif_file</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">vacuum</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;overpotential is </span><span class="si">{</span><span class="n">eta</span><span class="si">}</span><span class="s2"> V&quot;</span><span class="p">)</span>
+<span class="c1"># adjust surface structure</span>
+<span class="n">surface</span> <span class="o">=</span> <span class="n">remove_layers</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="n">element</span><span class="o">=</span><span class="s2">&quot;La&quot;</span><span class="p">,</span> <span class="n">n_layers</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">surface</span> <span class="o">=</span> <span class="n">remove_layers</span><span class="p">(</span><span class="n">surface</span><span class="p">,</span> <span class="n">element</span><span class="o">=</span><span class="s2">&quot;O&quot;</span><span class="p">,</span> <span class="n">n_layers</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+
+<span class="c1"># fix lower part</span>
+<span class="n">surface</span> <span class="o">=</span> <span class="n">fix_lower_surface</span><span class="p">(</span><span class="n">surface</span><span class="p">)</span>
+
+<span class="c1"># reaction_file = &quot;orr_alkaline.txt&quot;</span>
+<span class="n">reaction_file</span> <span class="o">=</span> <span class="s2">&quot;orr_alkaline2.txt&quot;</span>
+
+<span class="c1"># do calculation</span>
+<span class="n">deltaEs</span> <span class="o">=</span> <span class="n">get_reaction_energy</span><span class="p">(</span><span class="n">reaction_file</span><span class="o">=</span><span class="n">reaction_file</span><span class="p">,</span> <span class="n">surface</span><span class="o">=</span><span class="n">surface</span><span class="p">,</span> <span class="n">calculator</span><span class="o">=</span><span class="s2">&quot;vasp&quot;</span><span class="p">)</span>
+<span class="n">eta</span> <span class="o">=</span> <span class="n">get_overpotential_oer_orr</span><span class="p">(</span><span class="n">reaction_file</span><span class="o">=</span><span class="n">reaction_file</span><span class="p">,</span> <span class="n">deltaEs</span><span class="o">=</span><span class="n">deltaEs</span><span class="p">,</span> <span class="n">reaction_type</span><span class="o">=</span><span class="s2">&quot;orr&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;overpotential = </span><span class="si">{</span><span class="n">eta</span><span class="si">:</span><span class="s2">5.3f</span><span class="si">}</span><span class="s2"> eV&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
 </section>
