@@ -45,6 +45,8 @@ def calc_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt"
 
     # rotational angle for adsorbed molecules
     rotation = {"HO": [180, "x"], "HO2": [180, "x"], "O2": [90, "x"]}
+    # spin-polarized or not for adsorbed molecules
+    closed_shell_molecules = ["H2", "HO", "H2O"]
 
     for irxn in range(rxn_num):
         energies = {"reactant": 0.0, "product": 0.0}
@@ -89,6 +91,9 @@ def calc_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt"
                         atoms.calc = calc_mol
                         atoms.cell = [20, 20, 20]
                         atoms.center()
+                        if mol[0] in closed_shell_molecules:
+                            atoms.calc.set(ispin=1)
+
                 elif ads_type == "surface":
                     atoms.calc = calc_surf
                 elif ads_type == "adsorbed":
