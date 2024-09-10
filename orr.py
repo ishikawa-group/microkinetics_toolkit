@@ -4,8 +4,8 @@ if __name__ == "__main__":
     from microkinetics_toolkit.utils import remove_layers
     from microkinetics_toolkit.utils import replace_element
     from microkinetics_toolkit.utils import fix_lower_surface
-    from microkinetics_toolkit.calc_reaction_energy import calc_reaction_energy
-    from microkinetics_toolkit.orr_and_oer import calc_overpotential_oer_orr 
+    from microkinetics_toolkit.get_reaction_energy import get_reaction_energy
+    from microkinetics_toolkit.orr_and_oer import get_overpotential_oer_orr 
     from ase.visualize import view
 
     cif_file = "LaMnO3.cif"
@@ -27,8 +27,8 @@ if __name__ == "__main__":
     reaction_file = "orr_alkaline2.txt"
     # reaction_file = "orr_alkaline3.txt"
 
-    deltaEs = calc_reaction_energy(reaction_file=reaction_file, surface=surface, calculator="vasp", verbose=True)
-    eta = calc_overpotential_oer_orr(reaction_file=reaction_file, deltaEs=deltaEs, reaction_type="orr", verbose=True)
+    deltaEs = get_reaction_energy(reaction_file=reaction_file, surface=surface, calculator="vasp", verbose=True)
+    eta = get_overpotential_oer_orr(reaction_file=reaction_file, deltaEs=deltaEs, reaction_type="orr", verbose=True)
     eta = np.abs(eta)
 
     print(f"eta = {eta:5.3f} eV")
