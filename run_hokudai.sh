@@ -17,5 +17,6 @@ module load intel
 # echo "import os" > $vasp_script
 # echo "exitcode = os.system(\"mpirun -np ${NUM_PROCS} ${PRG}\")" >> $vasp_script
 
-python -m microkinetics_toolkit
+# python -m microkinetics_toolkit
+python orr.py
 
