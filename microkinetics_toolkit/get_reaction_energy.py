@@ -1,4 +1,5 @@
 def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt", verbose=False, dirname=None):
+def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt", verbose=False):
     """
     Calculate reaction energy for each reaction.
     """
@@ -35,10 +36,15 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
         calc_mol  = EMT()
         calc_surf = EMT()
     elif "vasp" in calculator:
+<<<<<<< HEAD
         kpt = 2
         dfttype = "gga"  # "plus_u"
         calc_mol  = set_vasp_calculator(atom_type="molecule", do_optimization=True, dfttype=dfttype, kpt=kpt)
         calc_surf = set_vasp_calculator(atom_type="surface", do_optimization=True, dfttype=dfttype, kpt=kpt)
+=======
+        calc_mol  = set_vasp_calculator(atom_type="molecule", do_optimization=True, dfttype="plus_u", kpt=2)
+        calc_surf = set_vasp_calculator(atom_type="surface", do_optimization=True, dfttype="plus_u", kpt=2)
+>>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
     elif "ocp" in valculator:
         calc_mol  = set_ocp_calculator()  # do not work
         calc_surf = set_ocp_calculator()
@@ -46,9 +52,13 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
         raise ValueError("Choose from emt, vasp, ocp.")
 
     # rotational angle for adsorbed molecules
+<<<<<<< HEAD
     # rotation = {"HO": [180, "x"], "HO2": [180, "x"], "O2": [90, "x"]}
     rotation = {"HO": [160, "x"], "HO2": [160, "x"], "O2": [70, "x"]}
 
+=======
+    rotation = {"HO": [180, "x"], "HO2": [180, "x"], "O2": [90, "x"]}
+>>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
     # spin-polarized or not for adsorbed molecules
     closed_shell_molecules = ["H2", "HO", "H2O"]
 
@@ -108,7 +118,11 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
                         adsorbate.rotate(*rotation[tmp])
 
                     height = 1.8
+<<<<<<< HEAD
                     offset = (0.0, 0.50)  # (0.0, 0.50) for smallest cell
+=======
+                    offset = (0.0, 0.5)
+>>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
                     position = adsorbate.positions[0][:2]
 
                     add_adsorbate(surface_, adsorbate, offset=offset, position=position, height=height)

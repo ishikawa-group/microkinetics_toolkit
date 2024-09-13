@@ -76,7 +76,6 @@ def set_vasp_calculator(atom_type="molecule", dfttype="gga", kpt=1, do_optimizat
         potim = 0.0
         nsw = 0
 
-    #if dfttype == "plus_u":
     calc = Vasp(prec="Normal", xc=xc, metagga=metagga, encut=encut, kpts=kpts, ismear=ismear, ediff=ediff, ediffg=ediffg,
                 ibrion=ibrion, potim=potim, nsw=nsw, algo=algo, ldipol=ldipol, idipol=idipol, setups=setups, lasph=True,
                 ispin=ispin, npar=npar, nsim=nsim, nelmin=nelmin, nelm=nelm, lreal=lreal, lorbit=lorbit, kgamma=kgamma,
