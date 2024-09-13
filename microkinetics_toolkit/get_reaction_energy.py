@@ -1,5 +1,8 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt", verbose=False, dirname=None):
+=======
+>>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
 =======
 >>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
 def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt", verbose=False):
@@ -41,10 +44,15 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
     elif "vasp" in calculator:
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
         kpt = 2
         dfttype = "gga"  # "plus_u"
         calc_mol  = set_vasp_calculator(atom_type="molecule", do_optimization=True, dfttype=dfttype, kpt=kpt)
         calc_surf = set_vasp_calculator(atom_type="surface", do_optimization=True, dfttype=dfttype, kpt=kpt)
+=======
+        calc_mol  = set_vasp_calculator(atom_type="molecule", do_optimization=True, dfttype="plus_u", kpt=2)
+        calc_surf = set_vasp_calculator(atom_type="surface", do_optimization=True, dfttype="plus_u", kpt=2)
+>>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
 =======
         calc_mol  = set_vasp_calculator(atom_type="molecule", do_optimization=True, dfttype="plus_u", kpt=2)
         calc_surf = set_vasp_calculator(atom_type="surface", do_optimization=True, dfttype="plus_u", kpt=2)
@@ -62,9 +70,13 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
     # rotational angle for adsorbed molecules
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     # rotation = {"HO": [180, "x"], "HO2": [180, "x"], "O2": [90, "x"]}
     rotation = {"HO": [160, "x"], "HO2": [160, "x"], "O2": [70, "x"]}
 
+=======
+    rotation = {"HO": [180, "x"], "HO2": [180, "x"], "O2": [90, "x"]}
+>>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
 =======
     rotation = {"HO": [180, "x"], "HO2": [180, "x"], "O2": [90, "x"]}
 >>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
@@ -132,7 +144,11 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
                     height = 1.8
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
                     offset = (0.0, 0.50)  # (0.0, 0.50) for smallest cell
+=======
+                    offset = (0.0, 0.5)
+>>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
 =======
                     offset = (0.0, 0.5)
 >>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
@@ -177,7 +193,11 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
                     # final setting before calcuation
                     atoms.pbc = True
 <<<<<<< HEAD
+<<<<<<< HEAD
                     directory = "work" + dirname + "/" + formula
+=======
+                    directory = "work" + "/" + formula
+>>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
 =======
                     directory = "work" + "/" + formula
 >>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878

@@ -1,7 +1,10 @@
 *.pt
 work
 <<<<<<< HEAD
+<<<<<<< HEAD
 tmpdir
+=======
+>>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
 =======
 >>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
 tmp.db

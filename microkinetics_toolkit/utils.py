@@ -536,7 +536,11 @@ def get_adsorbate_type(adsorbate, site):
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 def make_surface_from_cif(cif_file, indices=[1, 0, 0], repeat=[1, 1, 1], vacuum=10.0):
+=======
+def make_surface_from_cif(cif_file, indices=(1, 0, 0), vacuum=10.0):
+>>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
 =======
 def make_surface_from_cif(cif_file, indices=(1, 0, 0), vacuum=10.0):
 >>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
@@ -547,6 +551,10 @@ def make_surface_from_cif(cif_file, indices=(1, 0, 0), vacuum=10.0):
     from ase.io import read
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+    repeat = [1, 1, 1]
+>>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
 =======
     repeat = [1, 1, 1]
 >>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
