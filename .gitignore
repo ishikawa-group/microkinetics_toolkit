@@ -1,6 +1,6 @@
 *.pt
-work
-tmpdir
+work/
+tmpdir/
 tmp.db
 *.d[0-9]*
 *.sh.o*
