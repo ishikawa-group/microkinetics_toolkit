@@ -1,4 +1,0 @@
-OH_fcc + O2 --ads--> OO_fcc + OH
-OO_fcc + H2O --LH--> OOH_fcc + OH
-OOH_fcc --LH--> O_fcc + OH
-O_fcc + H2O --LH--> OH_fcc + OH
