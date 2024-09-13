@@ -535,14 +535,13 @@ def get_adsorbate_type(adsorbate, site):
     return ads_type
 
 
-def make_surface_from_cif(cif_file, indices=(1, 0, 0), vacuum=10.0):
+def make_surface_from_cif(cif_file, indices=[1, 0, 0], repeat=[1, 1, 1], vacuum=10.0):
     """
     Make a surface from a CIF file.
     """
     from ase.build import surface
     from ase.io import read
 
-    repeat = [1, 1, 1]
     bulk = read(cif_file)
     bulk = bulk*repeat
     surf = surface(bulk, indices=indices, layers=2, vacuum=vacuum)

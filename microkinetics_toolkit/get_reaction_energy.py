@@ -1,4 +1,4 @@
-def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt", verbose=False):
+def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt", verbose=False, dirname=None):
     """
     Calculate reaction energy for each reaction.
     """
@@ -35,8 +35,10 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
         calc_mol  = EMT()
         calc_surf = EMT()
     elif "vasp" in calculator:
-        calc_mol  = set_vasp_calculator(atom_type="molecule", do_optimization=True, dfttype="plus_u", kpt=2)
-        calc_surf = set_vasp_calculator(atom_type="surface", do_optimization=True, dfttype="plus_u", kpt=2)
+        kpt = 2
+        dfttype = "gga"  # "plus_u"
+        calc_mol  = set_vasp_calculator(atom_type="molecule", do_optimization=True, dfttype=dfttype, kpt=kpt)
+        calc_surf = set_vasp_calculator(atom_type="surface", do_optimization=True, dfttype=dfttype, kpt=kpt)
     elif "ocp" in valculator:
         calc_mol  = set_ocp_calculator()  # do not work
         calc_surf = set_ocp_calculator()
@@ -44,7 +46,9 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
         raise ValueError("Choose from emt, vasp, ocp.")
 
     # rotational angle for adsorbed molecules
-    rotation = {"HO": [180, "x"], "HO2": [180, "x"], "O2": [90, "x"]}
+    # rotation = {"HO": [180, "x"], "HO2": [180, "x"], "O2": [90, "x"]}
+    rotation = {"HO": [160, "x"], "HO2": [160, "x"], "O2": [70, "x"]}
+
     # spin-polarized or not for adsorbed molecules
     closed_shell_molecules = ["H2", "HO", "H2O"]
 
@@ -104,7 +108,7 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
                         adsorbate.rotate(*rotation[tmp])
 
                     height = 1.8
-                    offset = (0.0, 0.5)
+                    offset = (0.0, 0.50)  # (0.0, 0.50) for smallest cell
                     position = adsorbate.positions[0][:2]
 
                     add_adsorbate(surface_, adsorbate, offset=offset, position=position, height=height)
@@ -142,7 +146,7 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
 
                     # final setting before calcuation
                     atoms.pbc = True
-                    directory = "work" + "/" + formula
+                    directory = "work" + dirname + "/" + formula
                     atoms.calc.directory = directory
 
                     # lmaxmix setting
