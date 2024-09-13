@@ -20,7 +20,7 @@ if __name__ == "__main__":
     surface = make_surface_from_cif(cif_file, indices=[0, 0, 1], repeat=[1, 1, 1], vacuum=6.0)
 
     # make random replacement
-    surface = replace_element(surface, from_element="Mn", to_element="Fe", replace_percent=replace_percent)
+    surface = replace_element(surface, from_element="Mn", to_element="Fe", percent=replace_percent)
 
     surface = remove_layers(surface, element="La", n_layers=1)
     surface = remove_layers(surface, element="O", n_layers=2)

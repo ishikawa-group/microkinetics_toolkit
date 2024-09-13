@@ -18,13 +18,5 @@ module load intel
 # echo "exitcode = os.system(\"mpirun -np ${NUM_PROCS} ${PRG}\")" >> $vasp_script
 
 # python -m microkinetics_toolkit
-<<<<<<< HEAD
-<<<<<<< HEAD
 python orr.py --unique_id=$$
-=======
-python orr.py
->>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
-=======
-python orr.py
->>>>>>> d14e415f7deb6fdc8dd8c6128555cf0d4dd05878
 

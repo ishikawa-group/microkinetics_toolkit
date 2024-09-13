@@ -552,14 +552,14 @@ def make_surface_from_cif(cif_file, indices=[1, 0, 0], repeat=[1, 1, 1], vacuum=
     return surf
 
 
-def replace_element(atoms, from_element, to_element, percent_replace=100):
+def replace_element(atoms, from_element, to_element, percent=100):
     import random
 
     from ase.build import sort
 
     elements = atoms.get_chemical_symbols()
     num_from_elements = elements.count(from_element)
-    num_replace = int((percent_replace/100) * num_from_elements)
+    num_replace = int((percent/100) * num_from_elements)
 
     indices = [i for i, j in enumerate(elements) if j == from_element]
     random_item = random.sample(indices, num_replace)
