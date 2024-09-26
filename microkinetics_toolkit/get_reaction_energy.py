@@ -24,7 +24,7 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
         raise FileNotFoundError
 
     # temporary database
-    tmpdbfile = "tmp.db"
+    tmpdbfile = "tmp_" + dirname + ".db"
     tmpdb = connect(tmpdbfile)
 
     # reaction energy
@@ -108,7 +108,7 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
                         adsorbate.rotate(*rotation[tmp])
 
                     height = 1.8
-                    offset = (0.0, 0.50)  # (0.0, 0.50) for smallest cell
+                    offset = (0.0, 0.25)  # (0.0, 0.50) for smallest cell
                     position = adsorbate.positions[0][:2]
 
                     add_adsorbate(surface_, adsorbate, offset=offset, position=position, height=height)
@@ -146,7 +146,7 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
 
                     # final setting before calcuation
                     atoms.pbc = True
-                    directory = "work" + dirname + "/" + formula
+                    directory = "work_" + dirname + "/" + formula
                     atoms.calc.directory = directory
 
                     # lmaxmix setting

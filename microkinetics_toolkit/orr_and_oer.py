@@ -1,4 +1,4 @@
-def get_overpotential_oer_orr(reaction_file, deltaEs, T=298.15, reaction_type="oer", verbose=False):
+def get_overpotential_oer_orr(reaction_file, deltaEs, T=298.15, reaction_type="oer", energy_shift=None, verbose=False):
     """
     Calculate overpotential for OER or ORR.
     """
@@ -59,6 +59,9 @@ def get_overpotential_oer_orr(reaction_file, deltaEs, T=298.15, reaction_type="o
     deltaHs = deltaEs + deltaZPEs
     deltaGs = deltaHs - T*deltaSs
 
+    if energy_shift is not None:
+        deltaGs += np.array(energy_shift)
+
     if verbose:
         print(f"max of deltaGs = {np.max(deltaGs):5.3f} eV")
 
@@ -70,6 +73,8 @@ def get_overpotential_oer_orr(reaction_file, deltaEs, T=298.15, reaction_type="o
     else:
         print("some error")
         quit()
+
+    np.set_printoptions(precision=3)
 
     print(f"deltaGs = {deltaGs}")
 

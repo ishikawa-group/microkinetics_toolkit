@@ -19,7 +19,7 @@ def set_vasp_calculator(atom_type="molecule", dfttype="gga", kpt=1, do_optimizat
     elif atom_type == "surface":
         kpts = [kpt, kpt, 1]
         ismear = 0
-        lreal = True  # True or False
+        lreal = True
         ldipol = True
         idipol = 3
     elif atom_type == "solid":
@@ -35,8 +35,8 @@ def set_vasp_calculator(atom_type="molecule", dfttype="gga", kpt=1, do_optimizat
     # common setting
     xc = "pbe"
     encut = 500.0
-    ediff  =  1.0e-4
-    ediffg = -1.0e-0
+    ediff  =   1.0e-4
+    ediffg = -10.0e-2
     lorbit = 10
     algo = "Normal"
     nelmin = 5
@@ -45,7 +45,7 @@ def set_vasp_calculator(atom_type="molecule", dfttype="gga", kpt=1, do_optimizat
     nsim = npar
     ispin = 2
     kgamma = True
-    setups = {"Mn": "_pv", "Fe": "_pv"}
+    setups = {"Cr": "_pv", "Mn": "_pv", "Fe": "_pv"}
     lasph = True
 
     # DFT + U
@@ -70,7 +70,7 @@ def set_vasp_calculator(atom_type="molecule", dfttype="gga", kpt=1, do_optimizat
     if do_optimization:
         ibrion = 2
         potim = 0.1
-        nsw = 10
+        nsw = 30
     else:
         ibrion = 0
         potim = 0.0
