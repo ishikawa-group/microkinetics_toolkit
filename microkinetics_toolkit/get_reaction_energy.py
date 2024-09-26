@@ -1,3 +1,10 @@
+def register(db=db, formula=None, data=None):
+    id = db.reserve(name=formula)
+    if id is not None:
+        name = formula
+        db.write(atoms, name=name, id=id, data=data)
+
+
 def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt", verbose=False, dirname=None):
     """
     Calculate reaction energy for each reaction.
@@ -100,6 +107,7 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
 
                 elif ads_type == "surface":
                     atoms.calc = calc_surf
+
                 elif ads_type == "adsorbed":
                     adsorbate = atoms
                     tmp = adsorbate.get_chemical_formula()
@@ -111,6 +119,10 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
                     offset = (0.0, 0.25)  # (0.0, 0.50) for smallest cell
                     position = adsorbate.positions[0][:2]
 
+                    # get surf part from tmpdb of ads + surf case, as it should be done beforehand
+                    surf_formula = surface_.get_chemical_formula()
+                    past = tmpdb.get(name=surf_formula)
+                    surface_ = tmpdb.get_atoms(id=past.id).copy()
                     add_adsorbate(surface_, adsorbate, offset=offset, position=position, height=height)
 
                     atoms = surface_.copy()
@@ -169,6 +181,10 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
 
                 # recording to database
                 if first_time:
+                    register(db, formula=formula, data={"energy": energy})
+
+                """
+                if first_time:
                     id = tmpdb.reserve(name=formula)
                     if id is None:
                         # somebody is writing to db
@@ -177,6 +193,7 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
                         # ready to write
                         name = formula
                         tmpdb.write(atoms, name=name, id=id, data={"energy": energy})
+                """
 
             energies[side] = E
 
