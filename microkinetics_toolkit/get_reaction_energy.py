@@ -1,4 +1,12 @@
-def register(db=db, formula=None, data=None):
+def register(db=None, atoms=None, formula=None, data=None):
+    if db is None:
+        print("in registar: no database is given")
+        quit()
+
+    if atoms is None:
+        print("in registar: nothing to registar")
+        quit()
+
     id = db.reserve(name=formula)
     if id is not None:
         name = formula
@@ -120,9 +128,13 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
                     position = adsorbate.positions[0][:2]
 
                     # get surf part from tmpdb of ads + surf case, as it should be done beforehand
-                    surf_formula = surface_.get_chemical_formula()
-                    past = tmpdb.get(name=surf_formula)
-                    surface_ = tmpdb.get_atoms(id=past.id).copy()
+                    try:
+                        surf_formula = surface_.get_chemical_formula()
+                        past = tmpdb.get(name=surf_formula)
+                        surface_ = tmpdb.get_atoms(id=past.id).copy()
+                    except:
+                        pass
+
                     add_adsorbate(surface_, adsorbate, offset=offset, position=position, height=height)
 
                     atoms = surface_.copy()
@@ -181,7 +193,7 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
 
                 # recording to database
                 if first_time:
-                    register(db, formula=formula, data={"energy": energy})
+                    register(db=tmpdb, atoms=atoms, formula=formula, data={"energy": energy})
 
                 """
                 if first_time:

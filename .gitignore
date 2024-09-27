@@ -6,3 +6,4 @@ tmp.db
 *.sh.o*
 *.sh.e*
 **/__pycache__/**
+*.egg-info/
