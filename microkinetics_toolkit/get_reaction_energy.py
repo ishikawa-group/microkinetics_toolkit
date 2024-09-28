@@ -27,11 +27,13 @@ def get_past_atoms(db=None, atoms=None):
         past = tmpdb.get(name=surf_formula)
     except:
         # not found - return atoms as is
-        return atoms
+        first = True
+        return atoms, first
     else:
         # found - return old atoms
+        first = False
         atoms_ = tmpdb.get_atoms(id=past.id).copy()
-        return atoms_
+        return atoms_, first
 
 
 def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt", verbose=False, dirname=None):
@@ -48,6 +50,8 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
     from microkinetics_toolkit.utils import get_number_of_reaction
     from microkinetics_toolkit.utils import get_reac_and_prod
     from microkinetics_toolkit.vasp import set_vasp_calculator
+    from microkinetics_toolkit.vasp import set_directory
+    from microkinetics_toolkit.vasp import set_lmaxmix
 
     r_ads, r_site, r_coef, p_ads, p_site, p_coef = get_reac_and_prod(reaction_file)
     rxn_num = get_number_of_reaction(reaction_file)
@@ -150,8 +154,17 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
 
                     # get surf part from tmpdb of ads + surf case, as it should be done beforehand
                     surf_formula = surface_.get_chemical_formula()
-                    surface_ = get_past_atoms(db=tmpdb, atoms=surface_)
-                    add_adsorbate(surface_, adsorbate, offset=offset, position=position, height=height)
+                    surface_, first = get_past_atoms(db=tmpdb, atoms=surface_)
+                    if first:
+                        print("first time for bare surface - do calculation here")
+                        directory = "work_" + dirname + "/" + formula
+                        set_calc_directory(atoms=atoms, directory=directory)
+                        set_lmaxmix(atoms=atoms)
+                        energy = atoms.get_potential_energy()
+                        register(db=tmpdb, atoms=atoms, formula=formula, data={"energy": energy})
+                    else:
+                        print("found data for bare surface")
+                        add_adsorbate(surface_, adsorbate, offset=offset, position=position, height=height)
 
                     atoms = surface_.copy()
                     atoms.calc = calc_surf
@@ -175,34 +188,13 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
                         print(f"Calculating {formula} ... reuse previous value", flush=True)
 
                 if not first_time:
-                    #
                     # use previous energy
-                    #
                     energy = tmpdb.get(id=previous.id).data.energy
                 else:
-                    #
                     # perform energy calculation
-                    #
-
-                    # final setting before calcuation
-                    atoms.pbc = True
                     directory = "work_" + dirname + "/" + formula
-                    atoms.calc.directory = directory
-
-                    # lmaxmix setting
-                    symbols = atoms.get_chemical_symbols()
-                    d_elements = ["Mo", "Fe", "Cr"]
-                    f_elements = ["La", "Ce", "Pr", "Nd"]
-
-                    if len(set(symbols) & set(d_elements)) != 0:
-                        # has some d_elements
-                        atoms.calc.set(lmaxmix=4)
-
-                    if len(set(symbols) & set(f_elements)) != 0:
-                        # has some f_elements
-                        atoms.calc.set(lmaxmix=6)
-
-                    # do calculation
+                    set_calc_directory(atoms=atoms, directory=directory)
+                    set_lmaxmix(atoms=atoms)
                     energy = atoms.get_potential_energy()
 
                 E += coefs[imol]*energy

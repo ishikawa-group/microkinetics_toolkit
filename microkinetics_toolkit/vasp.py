@@ -35,7 +35,7 @@ def set_vasp_calculator(atom_type="molecule", dfttype="gga", kpt=1, do_optimizat
     # common setting
     xc = "pbe"
     encut = 500.0
-    ediff  =   1.0e-4
+    ediff  = 1.0e-4
     ediffg = -10.0e-2
     lorbit = 10
     algo = "Normal"
@@ -83,3 +83,26 @@ def set_vasp_calculator(atom_type="molecule", dfttype="gga", kpt=1, do_optimizat
                 )
 
     return calc
+
+
+def set_calc_directory(atoms=None, dirname=None, formula=None):
+    directory = "work_" + dirname + "/" + formula
+    atoms.calc.directory = directory
+    return None
+
+
+def set_lmaxmix(atoms=None):
+    # lmaxmix setting
+    symbols = atoms.get_chemical_symbols()
+    d_elements = ["Mo", "Fe", "Cr"]
+    f_elements = ["La", "Ce", "Pr", "Nd"]
+
+    if len(set(symbols) & set(d_elements)) != 0:
+        # has some d_elements
+        atoms.calc.set(lmaxmix=4)
+
+    if len(set(symbols) & set(f_elements)) != 0:
+        # has some f_elements
+        atoms.calc.set(lmaxmix=6)
+
+    return None
