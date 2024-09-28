@@ -13,6 +13,27 @@ def register(db=None, atoms=None, formula=None, data=None):
         db.write(atoms, name=name, id=id, data=data)
 
 
+def get_past_atoms(db=None, atoms=None):
+    if db is None:
+        print("in get_past_data: no database is given")
+        quit()
+
+    if atoms is None:
+        print("in get_past_data: nothing to registar")
+        quit()
+
+    formula = atoms.get_chemical_formula()
+    try:
+        past = tmpdb.get(name=surf_formula)
+    except:
+        # not found - return atoms as is
+        return atoms
+    else:
+        # found - return old atoms
+        atoms_ = tmpdb.get_atoms(id=past.id).copy()
+        return atoms_
+
+
 def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt", verbose=False, dirname=None):
     """
     Calculate reaction energy for each reaction.
@@ -128,13 +149,8 @@ def get_reaction_energy(reaction_file="oer.txt", surface=None, calculator="emt",
                     position = adsorbate.positions[0][:2]
 
                     # get surf part from tmpdb of ads + surf case, as it should be done beforehand
-                    try:
-                        surf_formula = surface_.get_chemical_formula()
-                        past = tmpdb.get(name=surf_formula)
-                        surface_ = tmpdb.get_atoms(id=past.id).copy()
-                    except:
-                        pass
-
+                    surf_formula = surface_.get_chemical_formula()
+                    surface_ = get_past_atoms(db=tmpdb, atoms=surface_)
                     add_adsorbate(surface_, adsorbate, offset=offset, position=position, height=height)
 
                     atoms = surface_.copy()
